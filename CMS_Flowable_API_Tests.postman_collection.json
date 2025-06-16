@@ -1,0 +1,286 @@
+{
+  "info": {
+    "name": "CMS Flowable Workflow API Tests",
+    "description": "Comprehensive API testing collection for Case Management System with Flowable Workflow",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080/api"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "case_number",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "task_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (responseCode.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.environment.set('jwt_token', jsonData.token);",
+                  "    pm.collectionVariables.set('jwt_token', jsonData.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"admin\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cases Management",
+      "item": [
+        {
+          "name": "Create Case with Multiple Allegations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (responseCode.code === 201) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set('case_number', jsonData.caseNumber);",
+                  "    pm.test('Case created successfully', function () {",
+                  "        pm.expect(jsonData.caseNumber).to.exist;",
+                  "        pm.expect(jsonData.allegations).to.have.lengthOf(3);",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Workplace Harassment Investigation\",\n  \"description\": \"Multiple allegations of harassment and discrimination in the marketing department. Requires immediate attention and legal review.\",\n  \"complainantName\": \"Sarah Johnson\",\n  \"complainantEmail\": \"sarah.johnson@company.com\",\n  \"priority\": \"HIGH\",\n  \"departmentId\": 1,\n  \"caseTypeId\": 2,\n  \"allegations\": [\n    {\n      \"allegationType\": \"HARASSMENT\",\n      \"severity\": \"HIGH\",\n      \"description\": \"Verbal harassment including inappropriate comments and unwelcome advances from direct supervisor\",\n      \"involvedPersons\": [\"Mike Wilson (Supervisor)\", \"Jenny Adams (Witness)\"],\n      \"incidentDate\": \"2025-06-10\"\n    },\n    {\n      \"allegationType\": \"DISCRIMINATION\",\n      \"severity\": \"MEDIUM\",\n      \"description\": \"Gender-based discrimination in assignment of high-profile projects and promotion opportunities\",\n      \"involvedPersons\": [\"Mike Wilson (Supervisor)\", \"Tom Smith (HR)\"],\n      \"incidentDate\": \"2025-06-05\"\n    },\n    {\n      \"allegationType\": \"RETALIATION\",\n      \"severity\": \"HIGH\",\n      \"description\": \"Punitive schedule changes and project reassignments after filing initial HR complaint\",\n      \"involvedPersons\": [\"Mike Wilson (Supervisor)\"],\n      \"incidentDate\": \"2025-06-12\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/cases",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "cases"]
+            }
+          }
+        },
+        {
+          "name": "Get Case Details",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Case details retrieved successfully', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.caseNumber).to.exist;",
+                  "    pm.expect(jsonData.allegations).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/cases/{{case_number}}",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "cases", "{{case_number}}"]
+            }
+          }
+        },
+        {
+          "name": "Create Legal Department Case",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Contract Violation Investigation\",\n  \"description\": \"Alleged breach of employment contract and confidentiality agreement\",\n  \"complainantName\": \"David Brown\",\n  \"complainantEmail\": \"david.brown@company.com\",\n  \"priority\": \"MEDIUM\",\n  \"departmentId\": 3,\n  \"caseTypeId\": 1,\n  \"allegations\": [\n    {\n      \"allegationType\": \"CONTRACT_VIOLATION\",\n      \"severity\": \"MEDIUM\",\n      \"description\": \"Employee violated non-compete clause by working with competitor\",\n      \"involvedPersons\": [\"John Doe (Employee)\", \"Legal Team\"],\n      \"incidentDate\": \"2025-06-08\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/cases",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "cases"]
+            }
+          }
+        },
+        {
+          "name": "Create HR Department Case",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Policy Violation Review\",\n  \"description\": \"Multiple policy violations requiring HR department review and disciplinary action\",\n  \"complainantName\": \"Lisa Chen\",\n  \"complainantEmail\": \"lisa.chen@company.com\",\n  \"priority\": \"LOW\",\n  \"departmentId\": 2,\n  \"caseTypeId\": 3,\n  \"allegations\": [\n    {\n      \"allegationType\": \"POLICY_VIOLATION\",\n      \"severity\": \"LOW\",\n      \"description\": \"Repeated tardiness and attendance issues\",\n      \"involvedPersons\": [\"Robert Taylor (Employee)\"],\n      \"incidentDate\": \"2025-06-01\"\n    },\n    {\n      \"allegationType\": \"MISCONDUCT\",\n      \"severity\": \"MEDIUM\",\n      \"description\": \"Inappropriate use of company resources for personal activities\",\n      \"involvedPersons\": [\"Robert Taylor (Employee)\"],\n      \"incidentDate\": \"2025-06-03\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/cases",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "cases"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Workflow Management",
+      "item": [
+        {
+          "name": "Get Active Tasks",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/workflow/tasks/active",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "workflow", "tasks", "active"]
+            }
+          }
+        },
+        {
+          "name": "Get Tasks by User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/v1/workflow/tasks/user/1",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "workflow", "tasks", "user", "1"]
+            }
+          }
+        },
+        {
+          "name": "Complete Task - HR Review",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Task completed successfully', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"taskId\": \"{{task_id}}\",\n  \"userId\": 1,\n  \"decision\": \"APPROVE\",\n  \"comments\": \"HR initial review completed. Case severity confirms need for legal department involvement. All documentation is complete and witness statements collected.\",\n  \"variables\": {\n    \"hrReviewComments\": \"Case involves serious harassment allegations requiring legal review\",\n    \"nextDepartment\": \"LEGAL\",\n    \"urgencyLevel\": \"HIGH\",\n    \"witnessStatementsCollected\": true,\n    \"documentationComplete\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/cases/tasks/complete",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "cases", "tasks", "complete"]
+            }
+          }
+        },
+        {
+          "name": "Complete Task - Legal Review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"taskId\": \"{{task_id}}\",\n  \"userId\": 2,\n  \"decision\": \"APPROVE\",\n  \"comments\": \"Legal review completed. Case has merit and company liability concerns identified. Recommend immediate disciplinary action and policy review.\",\n  \"variables\": {\n    \"legalReviewComments\": \"Potential liability exposure confirmed\",\n    \"nextDepartment\": \"CSIS\",\n    \"legalRisk\": \"HIGH\",\n    \"disciplinaryActionRecommended\": true,\n    \"policyReviewRequired\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/v1/cases/tasks/complete",
+              "host": ["{{base_url}}"],
+              "path": ["v1", "cases", "tasks", "complete"]
+            }
+          }
+        },
+        {
+          "name": "Complete Task - CSIS Investigation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"taskId\": \"{{task_id}}\",\n  \"userId\": 3,\n  \"decision\": \"APPROVE\",\n  \"comments\": \"CSIS investigation completed. Security protocols followed and evidence preserved. Case ready for final resolution.\",\n  \"variables\": {\n    \"csisInvestigationComments\": \"Security investigation completed successfully\",\n    \"evidencePreserved\": true,\n    \"securityProtocolsFollowed\": true,\n    \"recommendedAction\": \"TERMINATION\",\n    \"caseStatus\": \"READY_FOR_CLOSURE\"\n  }\n}"
+            },\n            "url": {\n              "raw": "{{base_url}}/v1/cases/tasks/complete",\n              "host": ["{{base_url}}"],\n              "path": ["v1", "cases", "tasks", "complete"]\n            }\n          }\n        }\n      ]\n    },\n    {\n      "name": "System Health",\n      "item": [\n        {\n          "name": "Health Check",\n          "request": {\n            "method": "GET",\n            "header": [],\n            "url": {\n              "raw": "{{base_url}}/actuator/health",\n              "host": ["{{base_url}}"],\n              "path": ["actuator", "health"]\n            }\n          }\n        },\n        {\n          "name": "Application Info",\n          "request": {\n            "method": "GET",\n            "header": [],\n            "url": {\n              "raw": "{{base_url}}/actuator/info",\n              "host": ["{{base_url}}"],\n              "path": ["actuator", "info"]\n            }\n          }\n        },\n        {\n          "name": "Flowable Metrics",\n          "request": {\n            "method": "GET",\n            "header": [],\n            "url": {\n              "raw": "{{base_url}}/actuator/flowable",\n              "host": ["{{base_url}}"],\n              "path": ["actuator", "flowable"]\n            }\n          }\n        }\n      ]\n    }\n  ]\n}

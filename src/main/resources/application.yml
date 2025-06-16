@@ -1,0 +1,188 @@
+# Enable Spring Boot's debug mode for detailed auto-configuration reports
+debug: true
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+
+spring:
+  application:
+    name: cms-flowable-backend
+  
+  profiles:
+    active: dev
+    
+  web:
+    resources:
+      add-mappings: true
+      static-locations: classpath:/META-INF/resources/,classpath:/resources/,classpath:/static/,classpath:/public/
+
+  # Single DataSource for both CMS and Flowable
+  datasource:
+    url: jdbc:postgresql://ep-wispy-haze-a5xy9c41-pooler.us-east-2.aws.neon.tech/workflow?user=wf_owner&password=npg_7hrdeDKf6WyC&sslmode=require&currentSchema=cms_flowable_workflow
+    username: wf_owner
+    password: npg_7hrdeDKf6WyC
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      pool-name: CMS-HikariCP
+      auto-commit: false
+        
+  # JPA Configuration for Business Tables
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: none # Keep 'none' if you manage schema manually or with Flyway/Liquibase for your JPA entities
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
+    show-sql: false # You can set this to true temporarily if you want to see SQL queries
+    properties:
+      hibernate:
+        default_schema: cms_flowable_workflow
+        format_sql: true
+        jdbc:
+          time_zone: UTC
+        order_inserts: true
+        order_updates: true
+        jdbc.batch_size: 25
+
+# Flowable Configuration
+flowable:
+  # Database Configuration
+  database-schema-update: true # This should be true for Flowable to create/update its own tables
+  database-type: postgres
+  database-schema: cms_flowable_workflow
+  check-process-definitions: false
+  
+  # Process Engine Configuration (BPMN) - Enabled by default if starter is present
+  process:
+    # Explicitly enabled for clarity, though it's usually true by default with the starter
+    enabled: true 
+    definition-cache-limit: 10
+    enable-safe-xml-parsing: false
+    resource-location: classpath*:/processes/
+    resource-suffixes:
+      - .bpmn
+      - .bpmn20.xml
+    
+  # CMMN Engine Configuration - DISABLED
+  cmmn:
+    enabled: false # Set to false to disable CMMN engine
+    resource-location: classpath*:/cmmn/ # These properties are now effectively ignored
+    resource-suffixes: 
+      - .cmmn
+      - .cmmn11
+      - .cmmn.xml
+    create-deployment-for-changed-only: true
+    
+  # DMN Engine Configuration - ENABLED
+  dmn:
+    enabled: true # Keep as true
+    resource-location: classpath*:/dmn/
+    resource-suffixes:
+      - .dmn
+      - .dmn11  
+      - .dmn.xml
+    strict-mode: false
+    
+  # Form Engine Configuration - DISABLED
+  form:
+    enabled: false # Set to false to disable Form engine
+    resource-location: classpath*:/forms/ # These properties are now effectively ignored
+    resource-suffixes:
+      - .form
+      
+  # Content Engine Configuration - DISABLED
+  content:
+    enabled: false # Set to false to disable Content engine
+    storage: # These properties are now effectively ignored
+      create-root: true
+      root-folder: flowable-content
+      
+  # History Configuration
+  history-level: full
+  
+  # Async Executor Configuration
+  async:
+    executor:
+      activate: true
+      core-pool-size: 8
+      max-pool-size: 16
+      queue-capacity: 100
+      thread-name-prefix: flowable-async-
+      
+  # REST API Configuration
+  rest:
+    app:
+      authentication-mode: verify-privilege
+      enable-cors: true
+      cors:
+        enabled: true
+        allowed-origins: "http://localhost:3000,http://localhost:3001"
+        allowed-methods: GET,POST,PUT,DELETE,OPTIONS
+        allowed-headers: "*"
+        allow-credentials: true
+        max-age: 3600
+
+# JWT Configuration
+jwt:
+  secret: ${JWT_SECRET:myVerySecretKeyForCMSApplicationThatShouldBeChangedInProduction}
+  expiration: 86400000 # 24 hours
+  refresh-expiration: 604800000 # 7 days
+
+# Logging Configuration
+logging:
+  level:
+    root: DEBUG # Set root logging level to DEBUG
+    org.flowable: DEBUG # Set Flowable specific logging to DEBUG
+    org.flowable.engine.impl.persistence: DEBUG
+    org.springframework.security: INFO
+    com.cms.flowable: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/cms-flowable.log
+
+# Management and Monitoring
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,flowable,httptrace
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized
+    flowable:
+      enabled: true
+
+# Application Specific Configuration
+cms:
+  database:
+    schema: cms_flowable_workflow
+  case:
+    number-prefix: "CMS"
+    auto-assignment: true
+    max-allegations-per-case: 10
+  notification:
+    email:
+      enabled: false
+      smtp:
+        host: localhost
+        port: 587
+    sms:
+      enabled: false
+  file:
+    upload:
+      max-size: 10MB
+      allowed-types: pdf,doc,docx,txt,jpg,png
+      storage-path: /app/uploads
+  deployment:
+    environment: ${DEPLOYMENT_ENV:development}
+    base-url: ${BASE_URL:http://localhost}
