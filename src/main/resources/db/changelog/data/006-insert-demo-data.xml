@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="001-insert-demo-data" author="cms-system" runOnChange="false" context="demo">
+        <comment>Insert demonstration data for POC and demos</comment>
+        
+        <!-- Demo notifications -->
+        <insert tableName="notifications" schemaName="cms_flowable_workflow">
+            <column name="recipient_user_id" value="100"/>
+            <column name="sender_user_id" value="1"/>
+            <column name="notification_type" value="CASE_ASSIGNMENT"/>
+            <column name="title" value="New Case Assigned"/>
+            <column name="message" value="You have been assigned a new case for review"/>
+            <column name="related_case_id" value="TEST-2025-001"/>
+            <column name="is_read" value="false"/>
+            <column name="priority" value="MEDIUM"/>
+            <column name="created_at" valueComputed="NOW() - INTERVAL '2 hours'"/>
+        </insert>
+        
+        <!-- Demo case comments -->
+        <insert tableName="case_comments" schemaName="cms_flowable_workflow">
+            <column name="case_id" value="TEST-2025-001"/>
+            <column name="comment_text" value="Initial review completed. Case requires detailed investigation."/>
+            <column name="comment_type" value="REVIEW"/>
+            <column name="is_internal" value="true"/>
+            <column name="visibility_level" value="DEPARTMENT"/>
+            <column name="created_by" value="100"/>
+            <column name="created_at" valueComputed="NOW() - INTERVAL '1 day'"/>
+        </insert>
+        
+        <!-- Demo case transitions -->
+        <insert tableName="case_transitions" schemaName="cms_flowable_workflow">
+            <column name="case_id" value="TEST-2025-002"/>
+            <column name="from_status" value="OPEN"/>
+            <column name="to_status" value="IN_PROGRESS"/>
+            <column name="transition_reason" value="Case assigned to security analyst"/>
+            <column name="transition_notes" value="Initial security assessment started"/>
+            <column name="transitioned_by" value="102"/>
+            <column name="transitioned_at" valueComputed="NOW() - INTERVAL '1 day'"/>
+        </insert>
+
+        <rollback>
+            <delete tableName="case_transitions" schemaName="cms_flowable_workflow">
+                <where>case_id = 'TEST-2025-002'</where>
+            </delete>
+            <delete tableName="case_comments" schemaName="cms_flowable_workflow">
+                <where>case_id = 'TEST-2025-001'</where>
+            </delete>
+            <delete tableName="notifications" schemaName="cms_flowable_workflow">
+                <where>related_case_id IN ('TEST-2025-001', 'TEST-2025-002')</where>
+            </delete>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

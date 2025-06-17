@@ -1,0 +1,303 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="001-create-foreign-key-constraints" author="cms-system" runOnChange="false">
+        <comment>Create foreign key constraints for referential integrity</comment>
+        
+        <!-- User relationships -->
+        <addForeignKeyConstraint
+            baseTableName="user_roles" baseColumnNames="user_id"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="users" referencedColumnNames="user_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_user_roles_user_id"/>
+        
+        <addForeignKeyConstraint
+            baseTableName="user_roles" baseColumnNames="role_id"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="roles" referencedColumnNames="role_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_user_roles_role_id"/>
+        
+        <addForeignKeyConstraint
+            baseTableName="user_roles" baseColumnNames="assigned_by"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="users" referencedColumnNames="user_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_user_roles_assigned_by"/>
+
+        <!-- Department self-reference -->
+        <addForeignKeyConstraint
+            baseTableName="departments" baseColumnNames="parent_department_id"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="departments" referencedColumnNames="department_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_departments_parent"/>
+        
+        <addForeignKeyConstraint
+            baseTableName="departments" baseColumnNames="department_head_user_id"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="users" referencedColumnNames="user_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_departments_head_user"/>
+
+        <!-- Case relationships -->
+        <addForeignKeyConstraint
+            baseTableName="cases" baseColumnNames="case_type_id"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="case_types" referencedColumnNames="case_type_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_cases_case_type"/>
+        
+        <addForeignKeyConstraint
+            baseTableName="cases" baseColumnNames="department_id"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="departments" referencedColumnNames="department_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_cases_department"/>
+        
+        <addForeignKeyConstraint
+            baseTableName="cases" baseColumnNames="assigned_to"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="users" referencedColumnNames="user_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_cases_assigned_to"/>
+        
+        <addForeignKeyConstraint
+            baseTableName="cases" baseColumnNames="created_by"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="users" referencedColumnNames="user_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_cases_created_by"/>
+        
+        <addForeignKeyConstraint
+            baseTableName="cases" baseColumnNames="updated_by"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="users" referencedColumnNames="user_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_cases_updated_by"/>
+
+        <!-- Allegation relationships -->
+        <addForeignKeyConstraint
+            baseTableName="allegations" baseColumnNames="case_id"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="cases" referencedColumnNames="case_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_allegations_case_id"
+            onDelete="CASCADE"/>
+        
+        <addForeignKeyConstraint
+            baseTableName="allegations" baseColumnNames="created_by"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="users" referencedColumnNames="user_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_allegations_created_by"/>
+        
+        <addForeignKeyConstraint
+            baseTableName="allegations" baseColumnNames="updated_by"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="users" referencedColumnNames="user_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_allegations_updated_by"/>
+
+        <!-- Work item relationships -->
+        <addForeignKeyConstraint
+            baseTableName="work_items" baseColumnNames="case_id"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="cases" referencedColumnNames="case_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_work_items_case_id"
+            onDelete="CASCADE"/>
+        
+        <addForeignKeyConstraint
+            baseTableName="work_items" baseColumnNames="assigned_to"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="users" referencedColumnNames="user_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_work_items_assigned_to"/>
+        
+        <addForeignKeyConstraint
+            baseTableName="work_items" baseColumnNames="created_by"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="users" referencedColumnNames="user_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_work_items_created_by"/>
+        
+        <addForeignKeyConstraint
+            baseTableName="work_items" baseColumnNames="updated_by"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="users" referencedColumnNames="user_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_work_items_updated_by"/>
+
+        <rollback>
+            <!-- Remove in reverse order to avoid dependency issues -->
+            <dropForeignKeyConstraint baseTableName="work_items" constraintName="fk_work_items_updated_by" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="work_items" constraintName="fk_work_items_created_by" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="work_items" constraintName="fk_work_items_assigned_to" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="work_items" constraintName="fk_work_items_case_id" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="allegations" constraintName="fk_allegations_updated_by" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="allegations" constraintName="fk_allegations_created_by" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="allegations" constraintName="fk_allegations_case_id" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="cases" constraintName="fk_cases_updated_by" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="cases" constraintName="fk_cases_created_by" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="cases" constraintName="fk_cases_assigned_to" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="cases" constraintName="fk_cases_department" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="cases" constraintName="fk_cases_case_type" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="departments" constraintName="fk_departments_head_user" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="departments" constraintName="fk_departments_parent" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="user_roles" constraintName="fk_user_roles_assigned_by" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="user_roles" constraintName="fk_user_roles_role_id" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="user_roles" constraintName="fk_user_roles_user_id" baseTableSchemaName="cms_flowable_workflow"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="002-create-audit-constraints" author="cms-system" runOnChange="false">
+        <comment>Create foreign key constraints for audit and monitoring tables</comment>
+        
+        <!-- Case transitions -->
+        <addForeignKeyConstraint
+            baseTableName="case_transitions" baseColumnNames="case_id"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="cases" referencedColumnNames="case_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_case_transitions_case_id"
+            onDelete="CASCADE"/>
+        
+        <addForeignKeyConstraint
+            baseTableName="case_transitions" baseColumnNames="transitioned_by"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="users" referencedColumnNames="user_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_case_transitions_user"/>
+
+        <!-- Case comments -->
+        <addForeignKeyConstraint
+            baseTableName="case_comments" baseColumnNames="case_id"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="cases" referencedColumnNames="case_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_case_comments_case_id"
+            onDelete="CASCADE"/>
+        
+        <addForeignKeyConstraint
+            baseTableName="case_comments" baseColumnNames="created_by"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="users" referencedColumnNames="user_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_case_comments_created_by"/>
+        
+        <addForeignKeyConstraint
+            baseTableName="case_comments" baseColumnNames="updated_by"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="users" referencedColumnNames="user_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_case_comments_updated_by"/>
+
+        <!-- Case attachments -->
+        <addForeignKeyConstraint
+            baseTableName="case_attachments" baseColumnNames="case_id"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="cases" referencedColumnNames="case_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_case_attachments_case_id"
+            onDelete="CASCADE"/>
+        
+        <addForeignKeyConstraint
+            baseTableName="case_attachments" baseColumnNames="uploaded_by"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="users" referencedColumnNames="user_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_case_attachments_uploaded_by"/>
+
+        <!-- User sessions -->
+        <addForeignKeyConstraint
+            baseTableName="user_sessions" baseColumnNames="user_id"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="users" referencedColumnNames="user_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_user_sessions_user_id"
+            onDelete="CASCADE"/>
+
+        <!-- Notifications -->
+        <addForeignKeyConstraint
+            baseTableName="notifications" baseColumnNames="recipient_user_id"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="users" referencedColumnNames="user_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_notifications_recipient"
+            onDelete="CASCADE"/>
+        
+        <addForeignKeyConstraint
+            baseTableName="notifications" baseColumnNames="sender_user_id"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="users" referencedColumnNames="user_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_notifications_sender"/>
+        
+        <addForeignKeyConstraint
+            baseTableName="notifications" baseColumnNames="related_case_id"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="cases" referencedColumnNames="case_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_notifications_case"/>
+        
+        <addForeignKeyConstraint
+            baseTableName="notifications" baseColumnNames="related_work_item_id"
+            baseTableSchemaName="cms_flowable_workflow"
+            referencedTableName="work_items" referencedColumnNames="work_item_id"
+            referencedTableSchemaName="cms_flowable_workflow"
+            constraintName="fk_notifications_work_item"/>
+
+        <rollback>
+            <dropForeignKeyConstraint baseTableName="notifications" constraintName="fk_notifications_work_item" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="notifications" constraintName="fk_notifications_case" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="notifications" constraintName="fk_notifications_sender" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="notifications" constraintName="fk_notifications_recipient" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="user_sessions" constraintName="fk_user_sessions_user_id" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="case_attachments" constraintName="fk_case_attachments_uploaded_by" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="case_attachments" constraintName="fk_case_attachments_case_id" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="case_comments" constraintName="fk_case_comments_updated_by" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="case_comments" constraintName="fk_case_comments_created_by" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="case_comments" constraintName="fk_case_comments_case_id" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="case_transitions" constraintName="fk_case_transitions_user" baseTableSchemaName="cms_flowable_workflow"/>
+            <dropForeignKeyConstraint baseTableName="case_transitions" constraintName="fk_case_transitions_case_id" baseTableSchemaName="cms_flowable_workflow"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="003-create-unique-constraints" author="cms-system" runOnChange="false">
+        <comment>Create unique constraints for business rules</comment>
+        
+        <!-- Ensure one active role assignment per user-role combination -->
+        <sql>
+            CREATE UNIQUE INDEX idx_user_roles_unique_active 
+            ON cms_flowable_workflow.user_roles (user_id, role_id) 
+            WHERE is_active = true;
+        </sql>
+        
+        <!-- Ensure unique case number generation -->
+        <addUniqueConstraint 
+            tableName="cases" 
+            columnNames="case_number" 
+            constraintName="uk_cases_case_number"
+            schemaName="cms_flowable_workflow"/>
+        
+        <!-- Ensure unique work item numbers -->
+        <addUniqueConstraint 
+            tableName="work_items" 
+            columnNames="work_item_number" 
+            constraintName="uk_work_items_number"
+            schemaName="cms_flowable_workflow"/>
+
+        <rollback>
+            <dropUniqueConstraint tableName="work_items" constraintName="uk_work_items_number" schemaName="cms_flowable_workflow"/>
+            <dropUniqueConstraint tableName="cases" constraintName="uk_cases_case_number" schemaName="cms_flowable_workflow"/>
+            <sql>DROP INDEX IF EXISTS cms_flowable_workflow.idx_user_roles_unique_active;</sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

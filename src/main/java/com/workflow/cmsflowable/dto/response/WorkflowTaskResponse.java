@@ -3,6 +3,8 @@ package com.workflow.cmsflowable.dto.response;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.Map;
 
 @Schema(description = "Workflow task information")
@@ -29,8 +31,11 @@ public class WorkflowTaskResponse {
     @Schema(description = "Candidate groups for the task")
     private String candidateGroups;
     
+    @Schema(description = "Task definition key")
+    private String taskDefinitionKey;
+    
     @Schema(description = "Task creation time")
-    private LocalDateTime createTime;
+    private LocalDateTime created;
     
     @Schema(description = "Task due date")
     private LocalDateTime dueDate;
@@ -75,11 +80,22 @@ public class WorkflowTaskResponse {
     public String getCandidateGroups() { return candidateGroups; }
     public void setCandidateGroups(String candidateGroups) { this.candidateGroups = candidateGroups; }
     
-    public LocalDateTime getCreateTime() { return createTime; }
-    public void setCreateTime(LocalDateTime createTime) { this.createTime = createTime; }
+    public String getTaskDefinitionKey() { return taskDefinitionKey; }
+    public void setTaskDefinitionKey(String taskDefinitionKey) { this.taskDefinitionKey = taskDefinitionKey; }
+    
+    public LocalDateTime getCreated() { return created; }
+    public void setCreated(LocalDateTime created) { this.created = created; }
+    
+    public void setCreated(Date created) { 
+        this.created = created != null ? created.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime() : null; 
+    }
     
     public LocalDateTime getDueDate() { return dueDate; }
     public void setDueDate(LocalDateTime dueDate) { this.dueDate = dueDate; }
+    
+    public void setDueDate(Date dueDate) { 
+        this.dueDate = dueDate != null ? dueDate.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime() : null; 
+    }
     
     public Integer getPriority() { return priority; }
     public void setPriority(Integer priority) { this.priority = priority; }

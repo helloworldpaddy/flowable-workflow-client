@@ -1,0 +1,256 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="001-create-audit-trigger-function" author="cms-system" runOnChange="false">
+        <comment>Create audit trigger function for automatic change tracking</comment>
+        
+        <sql>
+            -- Create audit trigger function
+            CREATE OR REPLACE FUNCTION cms_flowable_workflow.audit_trigger_function()
+            RETURNS trigger AS $$
+            DECLARE
+                old_values JSONB;
+                new_values JSONB;
+                changed_fields TEXT[];
+                current_user_id BIGINT;
+                current_username TEXT;
+                current_ip INET;
+                current_user_agent TEXT;
+            BEGIN
+                -- Get current user context
+                BEGIN
+                    current_user_id := current_setting('app.current_user_id')::BIGINT;
+                EXCEPTION WHEN OTHERS THEN
+                    current_user_id := NULL;
+                END;
+                
+                BEGIN
+                    current_username := current_setting('app.current_username');
+                EXCEPTION WHEN OTHERS THEN
+                    current_username := session_user;
+                END;
+                
+                BEGIN
+                    current_ip := current_setting('app.current_ip')::INET;
+                EXCEPTION WHEN OTHERS THEN
+                    current_ip := inet_client_addr();
+                END;
+                
+                BEGIN
+                    current_user_agent := current_setting('app.current_user_agent');
+                EXCEPTION WHEN OTHERS THEN
+                    current_user_agent := NULL;
+                END;
+                
+                -- Handle different trigger operations
+                IF TG_OP = 'DELETE' THEN
+                    old_values := to_jsonb(OLD);
+                    new_values := NULL;
+                    changed_fields := ARRAY(SELECT jsonb_object_keys(old_values));
+                    
+                    INSERT INTO cms_flowable_workflow.audit_log (
+                        table_name, record_id, action_type, old_values, new_values, changed_fields,
+                        user_id, username, ip_address, user_agent, action_timestamp
+                    ) VALUES (
+                        TG_TABLE_NAME, 
+                        COALESCE(OLD.case_id::TEXT, OLD.user_id::TEXT, OLD.role_id::TEXT, OLD.department_id::TEXT),
+                        TG_OP, old_values, new_values, changed_fields,
+                        current_user_id, current_username, current_ip, current_user_agent, NOW()
+                    );
+                    
+                    RETURN OLD;
+                    
+                ELSIF TG_OP = 'INSERT' THEN
+                    old_values := NULL;
+                    new_values := to_jsonb(NEW);
+                    changed_fields := ARRAY(SELECT jsonb_object_keys(new_values));
+                    
+                    INSERT INTO cms_flowable_workflow.audit_log (
+                        table_name, record_id, action_type, old_values, new_values, changed_fields,
+                        user_id, username, ip_address, user_agent, action_timestamp
+                    ) VALUES (
+                        TG_TABLE_NAME,
+                        COALESCE(NEW.case_id::TEXT, NEW.user_id::TEXT, NEW.role_id::TEXT, NEW.department_id::TEXT),
+                        TG_OP, old_values, new_values, changed_fields,
+                        current_user_id, current_username, current_ip, current_user_agent, NOW()
+                    );
+                    
+                    RETURN NEW;
+                    
+                ELSIF TG_OP = 'UPDATE' THEN
+                    old_values := to_jsonb(OLD);
+                    new_values := to_jsonb(NEW);
+                    
+                    -- Find changed fields
+                    SELECT ARRAY(
+                        SELECT key FROM jsonb_each(old_values) 
+                        WHERE NOT (old_values -> key = new_values -> key)
+                    ) INTO changed_fields;
+                    
+                    -- Only log if there are actual changes
+                    IF array_length(changed_fields, 1) > 0 THEN
+                        INSERT INTO cms_flowable_workflow.audit_log (
+                            table_name, record_id, action_type, old_values, new_values, changed_fields,
+                            user_id, username, ip_address, user_agent, action_timestamp
+                        ) VALUES (
+                            TG_TABLE_NAME,
+                            COALESCE(NEW.case_id::TEXT, NEW.user_id::TEXT, NEW.role_id::TEXT, NEW.department_id::TEXT),
+                            TG_OP, old_values, new_values, changed_fields,
+                            current_user_id, current_username, current_ip, current_user_agent, NOW()
+                        );
+                    END IF;
+                    
+                    RETURN NEW;
+                END IF;
+                
+                RETURN NULL;
+            END;
+            $$ LANGUAGE plpgsql SECURITY DEFINER;
+        </sql>
+
+        <rollback>
+            <sql>
+                DROP FUNCTION IF EXISTS cms_flowable_workflow.audit_trigger_function();
+            </sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="002-create-audit-triggers" author="cms-system" runOnChange="false">
+        <comment>Create audit triggers on sensitive tables</comment>
+        
+        <sql>
+            -- Create audit triggers for cases table
+            CREATE TRIGGER cases_audit_trigger
+                AFTER INSERT OR UPDATE OR DELETE ON cms_flowable_workflow.cases
+                FOR EACH ROW EXECUTE FUNCTION cms_flowable_workflow.audit_trigger_function();
+            
+            -- Create audit triggers for allegations table
+            CREATE TRIGGER allegations_audit_trigger
+                AFTER INSERT OR UPDATE OR DELETE ON cms_flowable_workflow.allegations
+                FOR EACH ROW EXECUTE FUNCTION cms_flowable_workflow.audit_trigger_function();
+            
+            -- Create audit triggers for work_items table
+            CREATE TRIGGER work_items_audit_trigger
+                AFTER INSERT OR UPDATE OR DELETE ON cms_flowable_workflow.work_items
+                FOR EACH ROW EXECUTE FUNCTION cms_flowable_workflow.audit_trigger_function();
+            
+            -- Create audit triggers for users table
+            CREATE TRIGGER users_audit_trigger
+                AFTER INSERT OR UPDATE OR DELETE ON cms_flowable_workflow.users
+                FOR EACH ROW EXECUTE FUNCTION cms_flowable_workflow.audit_trigger_function();
+            
+            -- Create audit triggers for user_roles table
+            CREATE TRIGGER user_roles_audit_trigger
+                AFTER INSERT OR UPDATE OR DELETE ON cms_flowable_workflow.user_roles
+                FOR EACH ROW EXECUTE FUNCTION cms_flowable_workflow.audit_trigger_function();
+            
+            -- Create audit triggers for roles table
+            CREATE TRIGGER roles_audit_trigger
+                AFTER INSERT OR UPDATE OR DELETE ON cms_flowable_workflow.roles
+                FOR EACH ROW EXECUTE FUNCTION cms_flowable_workflow.audit_trigger_function();
+            
+            -- Create audit triggers for departments table
+            CREATE TRIGGER departments_audit_trigger
+                AFTER INSERT OR UPDATE OR DELETE ON cms_flowable_workflow.departments
+                FOR EACH ROW EXECUTE FUNCTION cms_flowable_workflow.audit_trigger_function();
+            
+            -- Create audit triggers for case_types table
+            CREATE TRIGGER case_types_audit_trigger
+                AFTER INSERT OR UPDATE OR DELETE ON cms_flowable_workflow.case_types
+                FOR EACH ROW EXECUTE FUNCTION cms_flowable_workflow.audit_trigger_function();
+        </sql>
+
+        <rollback>
+            <sql>
+                DROP TRIGGER IF EXISTS case_types_audit_trigger ON cms_flowable_workflow.case_types;
+                DROP TRIGGER IF EXISTS departments_audit_trigger ON cms_flowable_workflow.departments;
+                DROP TRIGGER IF EXISTS roles_audit_trigger ON cms_flowable_workflow.roles;
+                DROP TRIGGER IF EXISTS user_roles_audit_trigger ON cms_flowable_workflow.user_roles;
+                DROP TRIGGER IF EXISTS users_audit_trigger ON cms_flowable_workflow.users;
+                DROP TRIGGER IF EXISTS work_items_audit_trigger ON cms_flowable_workflow.work_items;
+                DROP TRIGGER IF EXISTS allegations_audit_trigger ON cms_flowable_workflow.allegations;
+                DROP TRIGGER IF EXISTS cases_audit_trigger ON cms_flowable_workflow.cases;
+            </sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="003-create-updated-at-trigger-function" author="cms-system" runOnChange="false">
+        <comment>Create trigger function to automatically update updated_at timestamps</comment>
+        
+        <sql>
+            -- Create function to update updated_at timestamp
+            CREATE OR REPLACE FUNCTION cms_flowable_workflow.update_updated_at_column()
+            RETURNS trigger AS $$
+            BEGIN
+                NEW.updated_at = NOW();
+                RETURN NEW;
+            END;
+            $$ LANGUAGE plpgsql;
+        </sql>
+        
+        <sql>
+            -- Create updated_at triggers for tables that have updated_at column
+            CREATE TRIGGER users_update_updated_at
+                BEFORE UPDATE ON cms_flowable_workflow.users
+                FOR EACH ROW EXECUTE FUNCTION cms_flowable_workflow.update_updated_at_column();
+            
+            CREATE TRIGGER roles_update_updated_at
+                BEFORE UPDATE ON cms_flowable_workflow.roles
+                FOR EACH ROW EXECUTE FUNCTION cms_flowable_workflow.update_updated_at_column();
+            
+            CREATE TRIGGER user_roles_update_updated_at
+                BEFORE UPDATE ON cms_flowable_workflow.user_roles
+                FOR EACH ROW EXECUTE FUNCTION cms_flowable_workflow.update_updated_at_column();
+            
+            CREATE TRIGGER departments_update_updated_at
+                BEFORE UPDATE ON cms_flowable_workflow.departments
+                FOR EACH ROW EXECUTE FUNCTION cms_flowable_workflow.update_updated_at_column();
+            
+            CREATE TRIGGER case_types_update_updated_at
+                BEFORE UPDATE ON cms_flowable_workflow.case_types
+                FOR EACH ROW EXECUTE FUNCTION cms_flowable_workflow.update_updated_at_column();
+            
+            CREATE TRIGGER cases_update_updated_at
+                BEFORE UPDATE ON cms_flowable_workflow.cases
+                FOR EACH ROW EXECUTE FUNCTION cms_flowable_workflow.update_updated_at_column();
+            
+            CREATE TRIGGER allegations_update_updated_at
+                BEFORE UPDATE ON cms_flowable_workflow.allegations
+                FOR EACH ROW EXECUTE FUNCTION cms_flowable_workflow.update_updated_at_column();
+            
+            CREATE TRIGGER work_items_update_updated_at
+                BEFORE UPDATE ON cms_flowable_workflow.work_items
+                FOR EACH ROW EXECUTE FUNCTION cms_flowable_workflow.update_updated_at_column();
+            
+            CREATE TRIGGER case_comments_update_updated_at
+                BEFORE UPDATE ON cms_flowable_workflow.case_comments
+                FOR EACH ROW EXECUTE FUNCTION cms_flowable_workflow.update_updated_at_column();
+            
+            CREATE TRIGGER system_configuration_update_updated_at
+                BEFORE UPDATE ON cms_flowable_workflow.system_configuration
+                FOR EACH ROW EXECUTE FUNCTION cms_flowable_workflow.update_updated_at_column();
+        </sql>
+
+        <rollback>
+            <sql>
+                DROP TRIGGER IF EXISTS system_configuration_update_updated_at ON cms_flowable_workflow.system_configuration;
+                DROP TRIGGER IF EXISTS case_comments_update_updated_at ON cms_flowable_workflow.case_comments;
+                DROP TRIGGER IF EXISTS work_items_update_updated_at ON cms_flowable_workflow.work_items;
+                DROP TRIGGER IF EXISTS allegations_update_updated_at ON cms_flowable_workflow.allegations;
+                DROP TRIGGER IF EXISTS cases_update_updated_at ON cms_flowable_workflow.cases;
+                DROP TRIGGER IF EXISTS case_types_update_updated_at ON cms_flowable_workflow.case_types;
+                DROP TRIGGER IF EXISTS departments_update_updated_at ON cms_flowable_workflow.departments;
+                DROP TRIGGER IF EXISTS user_roles_update_updated_at ON cms_flowable_workflow.user_roles;
+                DROP TRIGGER IF EXISTS roles_update_updated_at ON cms_flowable_workflow.roles;
+                DROP TRIGGER IF EXISTS users_update_updated_at ON cms_flowable_workflow.users;
+                
+                DROP FUNCTION IF EXISTS cms_flowable_workflow.update_updated_at_column();
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

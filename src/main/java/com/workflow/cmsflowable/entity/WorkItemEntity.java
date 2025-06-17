@@ -53,6 +53,11 @@ public class WorkItemEntity {
     @Column(name = "flowable_process_instance_id")
     private String flowableProcessInstanceId;
     
+    @NotBlank
+    @Size(max = 50)
+    @Column(name = "case_id")
+    private String caseId;
+    
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     
@@ -126,4 +131,7 @@ public class WorkItemEntity {
     
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    
+    public String getCaseId() { return caseId; }
+    public void setCaseId(String caseId) { this.caseId = caseId; }
 }

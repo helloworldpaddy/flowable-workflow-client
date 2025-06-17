@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="003-remove-unique-constraint-process-instance-id" author="cms-system">
+        <comment>Remove unique constraint on flowable_process_instance_id to allow multiple work items per process</comment>
+        
+        <dropUniqueConstraint 
+            schemaName="cms_flowable_workflow" 
+            tableName="work_items" 
+            constraintName="work_items_flowable_process_instance_id_key"/>
+    </changeSet>
+
+</databaseChangeLog>

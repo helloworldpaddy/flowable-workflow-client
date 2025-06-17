@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="001-create-audit-log-partitions" author="cms-system" runOnChange="false">
+        <comment>Create partitioned audit log table for improved performance</comment>
+        
+        <!-- Create partitioned audit log table -->
+        <sql>
+            -- Create new partitioned audit log table
+            CREATE TABLE cms_flowable_workflow.audit_log_partitioned (
+                LIKE cms_flowable_workflow.audit_log INCLUDING ALL
+            ) PARTITION BY RANGE (action_timestamp);
+            
+            -- Create partitions for current and future months
+            CREATE TABLE cms_flowable_workflow.audit_log_y2025m01 
+            PARTITION OF cms_flowable_workflow.audit_log_partitioned
+            FOR VALUES FROM ('2025-01-01') TO ('2025-02-01');
+            
+            CREATE TABLE cms_flowable_workflow.audit_log_y2025m02 
+            PARTITION OF cms_flowable_workflow.audit_log_partitioned
+            FOR VALUES FROM ('2025-02-01') TO ('2025-03-01');
+            
+            CREATE TABLE cms_flowable_workflow.audit_log_y2025m03 
+            PARTITION OF cms_flowable_workflow.audit_log_partitioned
+            FOR VALUES FROM ('2025-03-01') TO ('2025-04-01');
+            
+            CREATE TABLE cms_flowable_workflow.audit_log_y2025m04 
+            PARTITION OF cms_flowable_workflow.audit_log_partitioned
+            FOR VALUES FROM ('2025-04-01') TO ('2025-05-01');
+            
+            CREATE TABLE cms_flowable_workflow.audit_log_y2025m05 
+            PARTITION OF cms_flowable_workflow.audit_log_partitioned
+            FOR VALUES FROM ('2025-05-01') TO ('2025-06-01');
+            
+            CREATE TABLE cms_flowable_workflow.audit_log_y2025m06 
+            PARTITION OF cms_flowable_workflow.audit_log_partitioned
+            FOR VALUES FROM ('2025-06-01') TO ('2025-07-01');
+            
+            CREATE TABLE cms_flowable_workflow.audit_log_y2025m07 
+            PARTITION OF cms_flowable_workflow.audit_log_partitioned
+            FOR VALUES FROM ('2025-07-01') TO ('2025-08-01');
+            
+            CREATE TABLE cms_flowable_workflow.audit_log_y2025m08 
+            PARTITION OF cms_flowable_workflow.audit_log_partitioned
+            FOR VALUES FROM ('2025-08-01') TO ('2025-09-01');
+            
+            CREATE TABLE cms_flowable_workflow.audit_log_y2025m09 
+            PARTITION OF cms_flowable_workflow.audit_log_partitioned
+            FOR VALUES FROM ('2025-09-01') TO ('2025-10-01');
+            
+            CREATE TABLE cms_flowable_workflow.audit_log_y2025m10 
+            PARTITION OF cms_flowable_workflow.audit_log_partitioned
+            FOR VALUES FROM ('2025-10-01') TO ('2025-11-01');
+            
+            CREATE TABLE cms_flowable_workflow.audit_log_y2025m11 
+            PARTITION OF cms_flowable_workflow.audit_log_partitioned
+            FOR VALUES FROM ('2025-11-01') TO ('2025-12-01');
+            
+            CREATE TABLE cms_flowable_workflow.audit_log_y2025m12 
+            PARTITION OF cms_flowable_workflow.audit_log_partitioned
+            FOR VALUES FROM ('2025-12-01') TO ('2026-01-01');
+            
+            -- Create default partition for future dates
+            CREATE TABLE cms_flowable_workflow.audit_log_default 
+            PARTITION OF cms_flowable_workflow.audit_log_partitioned
+            DEFAULT;
+            
+            -- Migrate existing data if any
+            INSERT INTO cms_flowable_workflow.audit_log_partitioned
+            SELECT * FROM cms_flowable_workflow.audit_log;
+            
+            -- Rename tables
+            ALTER TABLE cms_flowable_workflow.audit_log RENAME TO audit_log_old;
+            ALTER TABLE cms_flowable_workflow.audit_log_partitioned RENAME TO audit_log;
+        </sql>
+
+        <rollback>
+            <sql>
+                -- Restore original table
+                ALTER TABLE cms_flowable_workflow.audit_log RENAME TO audit_log_partitioned;
+                ALTER TABLE cms_flowable_workflow.audit_log_old RENAME TO audit_log;
+                
+                -- Drop partitioned table and all partitions
+                DROP TABLE IF EXISTS cms_flowable_workflow.audit_log_partitioned CASCADE;
+            </sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="002-create-partition-maintenance-function" author="cms-system" runOnChange="false">
+        <comment>Create function for automatic partition maintenance</comment>
+        
+        <sql>
+            -- Function to create monthly partitions automatically
+            CREATE OR REPLACE FUNCTION cms_flowable_workflow.create_monthly_audit_partition(partition_date DATE)
+            RETURNS void AS $$
+            DECLARE
+                partition_name TEXT;
+                start_date DATE;
+                end_date DATE;
+            BEGIN
+                -- Calculate partition name and date range
+                start_date := date_trunc('month', partition_date);
+                end_date := start_date + INTERVAL '1 month';
+                partition_name := 'audit_log_y' || to_char(start_date, 'YYYY') || 'm' || to_char(start_date, 'MM');
+                
+                -- Create partition if it doesn't exist
+                EXECUTE format('CREATE TABLE IF NOT EXISTS cms_flowable_workflow.%I 
+                               PARTITION OF cms_flowable_workflow.audit_log
+                               FOR VALUES FROM (%L) TO (%L)',
+                               partition_name, start_date, end_date);
+                               
+                RAISE NOTICE 'Created partition: %', partition_name;
+            END;
+            $$ LANGUAGE plpgsql;
+            
+            -- Function to drop old partitions (older than specified months)
+            CREATE OR REPLACE FUNCTION cms_flowable_workflow.drop_old_audit_partitions(months_to_keep INTEGER DEFAULT 24)
+            RETURNS void AS $$
+            DECLARE
+                partition_record RECORD;
+                cutoff_date DATE;
+            BEGIN
+                cutoff_date := date_trunc('month', CURRENT_DATE - (months_to_keep || ' months')::INTERVAL);
+                
+                FOR partition_record IN
+                    SELECT schemaname, tablename 
+                    FROM pg_tables 
+                    WHERE schemaname = 'cms_flowable_workflow' 
+                    AND tablename LIKE 'audit_log_y%m%'
+                    AND tablename NOT IN ('audit_log_default')
+                LOOP
+                    -- Extract date from partition name and compare
+                    DECLARE
+                        year_part INTEGER;
+                        month_part INTEGER;
+                        partition_date DATE;
+                    BEGIN
+                        year_part := substring(partition_record.tablename from 'y(\d{4})m')::INTEGER;
+                        month_part := substring(partition_record.tablename from 'm(\d{2})')::INTEGER;
+                        partition_date := make_date(year_part, month_part, 1);
+                        
+                        IF partition_date < cutoff_date THEN
+                            EXECUTE format('DROP TABLE IF EXISTS cms_flowable_workflow.%I', partition_record.tablename);
+                            RAISE NOTICE 'Dropped old partition: %', partition_record.tablename;
+                        END IF;
+                    EXCEPTION
+                        WHEN OTHERS THEN
+                            RAISE NOTICE 'Could not process partition: %', partition_record.tablename;
+                    END;
+                END LOOP;
+            END;
+            $$ LANGUAGE plpgsql;
+        </sql>
+
+        <rollback>
+            <sql>
+                DROP FUNCTION IF EXISTS cms_flowable_workflow.drop_old_audit_partitions(INTEGER);
+                DROP FUNCTION IF EXISTS cms_flowable_workflow.create_monthly_audit_partition(DATE);
+            </sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="003-create-partition-indexes" author="cms-system" runOnChange="false">
+        <comment>Create indexes on partitioned tables</comment>
+        
+        <sql>
+            -- Create indexes on the partitioned audit log table
+            CREATE INDEX idx_audit_log_part_table_record 
+            ON cms_flowable_workflow.audit_log (table_name, record_id, action_timestamp);
+            
+            CREATE INDEX idx_audit_log_part_user_timestamp 
+            ON cms_flowable_workflow.audit_log (user_id, action_timestamp);
+            
+            CREATE INDEX idx_audit_log_part_action_type 
+            ON cms_flowable_workflow.audit_log (action_type, action_timestamp);
+        </sql>
+
+        <rollback>
+            <sql>
+                DROP INDEX IF EXISTS cms_flowable_workflow.idx_audit_log_part_action_type;
+                DROP INDEX IF EXISTS cms_flowable_workflow.idx_audit_log_part_user_timestamp;
+                DROP INDEX IF EXISTS cms_flowable_workflow.idx_audit_log_part_table_record;
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <!-- ============================================ -->
+    <!-- CMS FLOWABLE DATABASE MIGRATION STRATEGY     -->
+    <!-- ============================================ -->
+    
+    <!-- Phase 1: Environment Setup and Schema Creation -->
+    <include file="db/changelog/setup/001-environment-setup.xml"/>
+    
+    <!-- Phase 2: Core Application Tables -->
+    <include file="db/changelog/schema/001-create-core-tables.xml"/>
+    <include file="db/changelog/schema/002-create-workflow-tables.xml"/>
+    <include file="db/changelog/schema/003-create-audit-tables.xml"/>
+    <include file="db/changelog/schema/004-create-indexes.xml"/>
+    <include file="db/changelog/schema/005-create-constraints.xml"/>
+    
+    <!-- Phase 3: Reference Data -->
+    <include file="db/changelog/data/001-insert-system-roles.xml"/>
+    <include file="db/changelog/data/002-insert-case-types.xml"/>
+    <include file="db/changelog/data/003-insert-departments.xml"/>
+    <include file="db/changelog/data/004-insert-admin-users.xml"/>
+    
+    <!-- Phase 4: Environment-Specific Data -->
+    <include file="db/changelog/data/005-insert-test-data.xml"/>
+    <include file="db/changelog/data/006-insert-demo-data.xml"/>
+    
+    <!-- Phase 5: Legacy Migration Support -->
+    <include file="db/changelog/migration/001-legacy-data-migration.xml"/>
+    
+    <!-- Phase 6: Performance Optimizations -->
+    <include file="db/changelog/performance/001-create-performance-indexes.xml"/>
+    <include file="db/changelog/performance/002-create-partitions.xml"/>
+    
+    <!-- Phase 7: Security and Compliance -->
+    <include file="db/changelog/security/001-create-security-policies.xml"/>
+    <include file="db/changelog/security/002-create-audit-triggers.xml"/>
+
+</databaseChangeLog>

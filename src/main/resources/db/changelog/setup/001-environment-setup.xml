@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="001-create-schema" author="cms-system" runOnChange="false">
+        <comment>Create schema for CMS Flowable application</comment>
+        
+        <!-- Create schema if it doesn't exist -->
+        <sql>
+            CREATE SCHEMA IF NOT EXISTS cms_flowable_workflow;
+        </sql>
+        
+        <!-- Set search path for subsequent operations -->
+        <sql>
+            SET search_path TO cms_flowable_workflow, public;
+        </sql>
+        
+        <rollback>
+            <!-- Note: Be careful with dropping schema in production -->
+            <sql>DROP SCHEMA IF EXISTS cms_flowable_workflow CASCADE;</sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="002-create-extensions" author="cms-system" runOnChange="false">
+        <comment>Create PostgreSQL extensions needed for the application</comment>
+        
+        <!-- Enable UUID extension for generating UUIDs -->
+        <sql>
+            CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+        </sql>
+        
+        <!-- Enable pgcrypto for password hashing -->
+        <sql>
+            CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+        </sql>
+        
+        <rollback>
+            <sql>DROP EXTENSION IF EXISTS "pgcrypto";</sql>
+            <sql>DROP EXTENSION IF EXISTS "uuid-ossp";</sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="003-create-enums" author="cms-system" runOnChange="false">
+        <comment>Create ENUM types for the application</comment>
+        
+        <!-- Case Status Enum -->
+        <sql>
+            DO $$ BEGIN
+                CREATE TYPE cms_flowable_workflow.case_status_enum AS ENUM (
+                    'OPEN', 'IN_PROGRESS', 'UNDER_REVIEW', 'CLOSED', 'CANCELLED', 'SUSPENDED'
+                );
+            EXCEPTION
+                WHEN duplicate_object THEN null;
+            END $$;
+        </sql>
+        
+        <!-- Priority Enum -->
+        <sql>
+            DO $$ BEGIN
+                CREATE TYPE cms_flowable_workflow.priority_enum AS ENUM (
+                    'LOW', 'MEDIUM', 'HIGH', 'CRITICAL', 'URGENT'
+                );
+            EXCEPTION
+                WHEN duplicate_object THEN null;
+            END $$;
+        </sql>
+        
+        <!-- Severity Enum -->
+        <sql>
+            DO $$ BEGIN
+                CREATE TYPE cms_flowable_workflow.severity_enum AS ENUM (
+                    'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'
+                );
+            EXCEPTION
+                WHEN duplicate_object THEN null;
+            END $$;
+        </sql>
+        
+        <!-- User Status Enum -->
+        <sql>
+            DO $$ BEGIN
+                CREATE TYPE cms_flowable_workflow.user_status_enum AS ENUM (
+                    'ACTIVE', 'INACTIVE', 'SUSPENDED', 'LOCKED'
+                );
+            EXCEPTION
+                WHEN duplicate_object THEN null;
+            END $$;
+        </sql>
+        
+        <!-- Work Item Status Enum -->
+        <sql>
+            DO $$ BEGIN
+                CREATE TYPE cms_flowable_workflow.work_item_status_enum AS ENUM (
+                    'OPEN', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'ON_HOLD'
+                );
+            EXCEPTION
+                WHEN duplicate_object THEN null;
+            END $$;
+        </sql>
+        
+        <rollback>
+            <sql>DROP TYPE IF EXISTS cms_flowable_workflow.work_item_status_enum;</sql>
+            <sql>DROP TYPE IF EXISTS cms_flowable_workflow.user_status_enum;</sql>
+            <sql>DROP TYPE IF EXISTS cms_flowable_workflow.severity_enum;</sql>
+            <sql>DROP TYPE IF EXISTS cms_flowable_workflow.priority_enum;</sql>
+            <sql>DROP TYPE IF EXISTS cms_flowable_workflow.case_status_enum;</sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

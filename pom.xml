@@ -96,6 +96,12 @@
             <version>${postgresql.version}</version>
         </dependency>
 
+        <!-- Liquibase for database migrations -->
+        <dependency>
+            <groupId>org.liquibase</groupId>
+            <artifactId>liquibase-core</artifactId>
+        </dependency>
+
         <!-- JWT Libraries for Spring Security -->
 
         <!-- JJWT API: Contains interfaces for JWT -->

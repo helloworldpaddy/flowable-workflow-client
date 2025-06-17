@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="002-add-case-id-to-work-items" author="cms-system">
+        <comment>Add case_id column to work_items table to link work items to their parent case</comment>
+        
+        <!-- First add the column as nullable -->
+        <addColumn schemaName="cms_flowable_workflow" tableName="work_items">
+            <column name="case_id" type="VARCHAR(50)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        
+        <!-- Update existing records with a default value if any exist -->
+        <sql>
+            UPDATE cms_flowable_workflow.work_items 
+            SET case_id = 'UNKNOWN' 
+            WHERE case_id IS NULL;
+        </sql>
+        
+        <!-- Now make it not null -->
+        <addNotNullConstraint schemaName="cms_flowable_workflow" 
+                             tableName="work_items" 
+                             columnName="case_id" 
+                             columnDataType="VARCHAR(50)"/>
+        
+        <createIndex schemaName="cms_flowable_workflow" tableName="work_items" indexName="idx_work_items_case_id">
+            <column name="case_id"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

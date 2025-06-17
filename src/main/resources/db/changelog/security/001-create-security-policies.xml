@@ -1,0 +1,266 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="001-enable-row-level-security" author="cms-system" runOnChange="false">
+        <comment>Enable row-level security for sensitive tables</comment>
+        
+        <!-- Enable RLS on sensitive tables -->
+        <sql>
+            -- Enable RLS on cases table
+            ALTER TABLE cms_flowable_workflow.cases ENABLE ROW LEVEL SECURITY;
+            
+            -- Enable RLS on allegations table
+            ALTER TABLE cms_flowable_workflow.allegations ENABLE ROW LEVEL SECURITY;
+            
+            -- Enable RLS on work_items table
+            ALTER TABLE cms_flowable_workflow.work_items ENABLE ROW LEVEL SECURITY;
+            
+            -- Enable RLS on case_comments table
+            ALTER TABLE cms_flowable_workflow.case_comments ENABLE ROW LEVEL SECURITY;
+            
+            -- Enable RLS on case_attachments table
+            ALTER TABLE cms_flowable_workflow.case_attachments ENABLE ROW LEVEL SECURITY;
+            
+            -- Enable RLS on notifications table
+            ALTER TABLE cms_flowable_workflow.notifications ENABLE ROW LEVEL SECURITY;
+        </sql>
+
+        <rollback>
+            <sql>
+                ALTER TABLE cms_flowable_workflow.notifications DISABLE ROW LEVEL SECURITY;
+                ALTER TABLE cms_flowable_workflow.case_attachments DISABLE ROW LEVEL SECURITY;
+                ALTER TABLE cms_flowable_workflow.case_comments DISABLE ROW LEVEL SECURITY;
+                ALTER TABLE cms_flowable_workflow.work_items DISABLE ROW LEVEL SECURITY;
+                ALTER TABLE cms_flowable_workflow.allegations DISABLE ROW LEVEL SECURITY;
+                ALTER TABLE cms_flowable_workflow.cases DISABLE ROW LEVEL SECURITY;
+            </sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="002-create-rls-policies" author="cms-system" runOnChange="false">
+        <comment>Create row-level security policies</comment>
+        
+        <sql>
+            -- Create RLS policies for cases table
+            
+            -- Admin users can see all cases
+            CREATE POLICY cases_admin_all ON cms_flowable_workflow.cases
+                FOR ALL TO cms_app_admin
+                USING (true)
+                WITH CHECK (true);
+            
+            -- Users can see cases they created or are assigned to
+            CREATE POLICY cases_user_access ON cms_flowable_workflow.cases
+                FOR SELECT TO cms_app_user
+                USING (
+                    created_by = current_setting('app.current_user_id')::BIGINT 
+                    OR assigned_to = current_setting('app.current_user_id')::BIGINT
+                    OR EXISTS (
+                        SELECT 1 FROM cms_flowable_workflow.user_roles ur
+                        JOIN cms_flowable_workflow.roles r ON ur.role_id = r.role_id
+                        WHERE ur.user_id = current_setting('app.current_user_id')::BIGINT
+                        AND r.role_code IN ('DIRECTOR', 'IU_MANAGER', 'CASE_MANAGER')
+                        AND ur.is_active = true
+                    )
+                );
+            
+            -- Department-based access for cases
+            CREATE POLICY cases_department_access ON cms_flowable_workflow.cases
+                FOR SELECT TO cms_app_user
+                USING (
+                    department_id IN (
+                        SELECT d.department_id 
+                        FROM cms_flowable_workflow.departments d
+                        JOIN cms_flowable_workflow.user_roles ur ON ur.user_id = current_setting('app.current_user_id')::BIGINT
+                        JOIN cms_flowable_workflow.roles r ON ur.role_id = r.role_id
+                        WHERE ur.is_active = true
+                        AND (
+                            (r.role_code = 'HR_SPECIALIST' AND d.department_code = 'HR')
+                            OR (r.role_code = 'LEGAL_COUNSEL' AND d.department_code = 'LEGAL')
+                            OR (r.role_code = 'SECURITY_ANALYST' AND d.department_code = 'SECURITY')
+                        )
+                    )
+                );
+        </sql>
+        
+        <sql>
+            -- Create RLS policies for allegations table
+            
+            -- Admin users can see all allegations
+            CREATE POLICY allegations_admin_all ON cms_flowable_workflow.allegations
+                FOR ALL TO cms_app_admin
+                USING (true)
+                WITH CHECK (true);
+            
+            -- Users can see allegations for cases they have access to
+            CREATE POLICY allegations_case_access ON cms_flowable_workflow.allegations
+                FOR SELECT TO cms_app_user
+                USING (
+                    EXISTS (
+                        SELECT 1 FROM cms_flowable_workflow.cases c
+                        WHERE c.case_id = allegations.case_id
+                        -- Case access rules are handled by cases table RLS
+                    )
+                );
+            
+            -- Department-specific allegation access
+            CREATE POLICY allegations_department_access ON cms_flowable_workflow.allegations
+                FOR SELECT TO cms_app_user
+                USING (
+                    department_classification IN (
+                        SELECT CASE 
+                            WHEN r.role_code = 'HR_SPECIALIST' THEN 'HR'
+                            WHEN r.role_code = 'LEGAL_COUNSEL' THEN 'LEGAL'
+                            WHEN r.role_code = 'SECURITY_ANALYST' THEN 'SECURITY'
+                            ELSE NULL
+                        END
+                        FROM cms_flowable_workflow.user_roles ur
+                        JOIN cms_flowable_workflow.roles r ON ur.role_id = r.role_id
+                        WHERE ur.user_id = current_setting('app.current_user_id')::BIGINT
+                        AND ur.is_active = true
+                    )
+                );
+        </sql>
+        
+        <sql>
+            -- Create RLS policies for notifications table
+            
+            -- Admin users can see all notifications
+            CREATE POLICY notifications_admin_all ON cms_flowable_workflow.notifications
+                FOR ALL TO cms_app_admin
+                USING (true)
+                WITH CHECK (true);
+            
+            -- Users can only see their own notifications
+            CREATE POLICY notifications_recipient_only ON cms_flowable_workflow.notifications
+                FOR SELECT TO cms_app_user
+                USING (recipient_user_id = current_setting('app.current_user_id')::BIGINT);
+            
+            -- Users can update their own notifications (mark as read)
+            CREATE POLICY notifications_recipient_update ON cms_flowable_workflow.notifications
+                FOR UPDATE TO cms_app_user
+                USING (recipient_user_id = current_setting('app.current_user_id')::BIGINT)
+                WITH CHECK (recipient_user_id = current_setting('app.current_user_id')::BIGINT);
+        </sql>
+
+        <rollback>
+            <sql>
+                -- Drop all RLS policies
+                DROP POLICY IF EXISTS notifications_recipient_update ON cms_flowable_workflow.notifications;
+                DROP POLICY IF EXISTS notifications_recipient_only ON cms_flowable_workflow.notifications;
+                DROP POLICY IF EXISTS notifications_admin_all ON cms_flowable_workflow.notifications;
+                DROP POLICY IF EXISTS allegations_department_access ON cms_flowable_workflow.allegations;
+                DROP POLICY IF EXISTS allegations_case_access ON cms_flowable_workflow.allegations;
+                DROP POLICY IF EXISTS allegations_admin_all ON cms_flowable_workflow.allegations;
+                DROP POLICY IF EXISTS cases_department_access ON cms_flowable_workflow.cases;
+                DROP POLICY IF EXISTS cases_user_access ON cms_flowable_workflow.cases;
+                DROP POLICY IF EXISTS cases_admin_all ON cms_flowable_workflow.cases;
+            </sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="003-create-database-roles" author="cms-system" runOnChange="false">
+        <comment>Create database roles for application security</comment>
+        
+        <sql>
+            -- Create database roles for the application
+            
+            -- Admin role with full access
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'cms_app_admin') THEN
+                    CREATE ROLE cms_app_admin;
+                END IF;
+            END
+            $$;
+            
+            -- Regular user role with limited access
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'cms_app_user') THEN
+                    CREATE ROLE cms_app_user;
+                END IF;
+            END
+            $$;
+            
+            -- Read-only role for reporting
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'cms_app_readonly') THEN
+                    CREATE ROLE cms_app_readonly;
+                END IF;
+            END
+            $$;
+            
+            -- Service role for application connections
+            DO $$
+            BEGIN
+                IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'cms_app_service') THEN
+                    CREATE ROLE cms_app_service LOGIN;
+                END IF;
+            END
+            $$;
+        </sql>
+        
+        <sql>
+            -- Grant appropriate permissions to roles
+            
+            -- Grant schema usage
+            GRANT USAGE ON SCHEMA cms_flowable_workflow TO cms_app_admin, cms_app_user, cms_app_readonly, cms_app_service;
+            
+            -- Admin role gets full access
+            GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA cms_flowable_workflow TO cms_app_admin;
+            GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA cms_flowable_workflow TO cms_app_admin;
+            GRANT ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA cms_flowable_workflow TO cms_app_admin;
+            
+            -- User role gets selective access
+            GRANT SELECT, INSERT, UPDATE, DELETE ON cms_flowable_workflow.cases TO cms_app_user;
+            GRANT SELECT, INSERT, UPDATE, DELETE ON cms_flowable_workflow.allegations TO cms_app_user;
+            GRANT SELECT, INSERT, UPDATE, DELETE ON cms_flowable_workflow.work_items TO cms_app_user;
+            GRANT SELECT, INSERT, UPDATE, DELETE ON cms_flowable_workflow.case_comments TO cms_app_user;
+            GRANT SELECT, INSERT, UPDATE, DELETE ON cms_flowable_workflow.case_attachments TO cms_app_user;
+            GRANT SELECT, UPDATE ON cms_flowable_workflow.notifications TO cms_app_user;
+            GRANT SELECT ON cms_flowable_workflow.users TO cms_app_user;
+            GRANT SELECT ON cms_flowable_workflow.roles TO cms_app_user;
+            GRANT SELECT ON cms_flowable_workflow.user_roles TO cms_app_user;
+            GRANT SELECT ON cms_flowable_workflow.departments TO cms_app_user;
+            GRANT SELECT ON cms_flowable_workflow.case_types TO cms_app_user;
+            
+            -- Read-only role gets select access
+            GRANT SELECT ON ALL TABLES IN SCHEMA cms_flowable_workflow TO cms_app_readonly;
+            
+            -- Service role inherits user permissions and can manage sessions
+            GRANT cms_app_user TO cms_app_service;
+            GRANT INSERT, UPDATE, DELETE ON cms_flowable_workflow.user_sessions TO cms_app_service;
+            GRANT INSERT ON cms_flowable_workflow.audit_log TO cms_app_service;
+            
+            -- Grant sequence access
+            GRANT USAGE ON ALL SEQUENCES IN SCHEMA cms_flowable_workflow TO cms_app_user, cms_app_service;
+        </sql>
+
+        <rollback>
+            <sql>
+                -- Revoke permissions and drop roles
+                REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA cms_flowable_workflow FROM cms_app_service;
+                REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA cms_flowable_workflow FROM cms_app_service;
+                REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA cms_flowable_workflow FROM cms_app_readonly;
+                REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA cms_flowable_workflow FROM cms_app_user;
+                REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA cms_flowable_workflow FROM cms_app_user;
+                REVOKE ALL PRIVILEGES ON ALL TABLES IN SCHEMA cms_flowable_workflow FROM cms_app_admin;
+                REVOKE ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA cms_flowable_workflow FROM cms_app_admin;
+                REVOKE ALL PRIVILEGES ON ALL FUNCTIONS IN SCHEMA cms_flowable_workflow FROM cms_app_admin;
+                REVOKE USAGE ON SCHEMA cms_flowable_workflow FROM cms_app_admin, cms_app_user, cms_app_readonly, cms_app_service;
+                
+                DROP ROLE IF EXISTS cms_app_service;
+                DROP ROLE IF EXISTS cms_app_readonly;
+                DROP ROLE IF EXISTS cms_app_user;
+                DROP ROLE IF EXISTS cms_app_admin;
+            </sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

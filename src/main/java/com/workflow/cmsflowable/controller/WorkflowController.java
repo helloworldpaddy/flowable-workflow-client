@@ -1,5 +1,6 @@
 package com.workflow.cmsflowable.controller;
 
+import com.workflow.cmsflowable.dto.response.WorkflowTaskResponse;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.TaskService;
 import org.flowable.engine.runtime.ProcessInstance;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/workflow")
@@ -42,14 +44,45 @@ public class WorkflowController {
     }
 
     @GetMapping("/tasks")
-    public ResponseEntity<List<Task>> getTasks(@RequestParam(required = false) String assignee) {
+    public ResponseEntity<List<WorkflowTaskResponse>> getTasks(
+            @RequestParam(required = false) String assignee,
+            @RequestParam(required = false) String candidateGroup) {
+        
         List<Task> tasks;
+        
         if (assignee != null && !assignee.isEmpty()) {
             tasks = taskService.createTaskQuery().taskAssignee(assignee).list();
+        } else if (candidateGroup != null && !candidateGroup.isEmpty()) {
+            tasks = taskService.createTaskQuery().taskCandidateGroup(candidateGroup).list();
         } else {
             tasks = taskService.createTaskQuery().list();
         }
-        return ResponseEntity.ok(tasks);
+        
+        List<WorkflowTaskResponse> taskResponses = tasks.stream()
+                .map(this::convertToTaskResponse)
+                .collect(Collectors.toList());
+        
+        return ResponseEntity.ok(taskResponses);
+    }
+    
+    private WorkflowTaskResponse convertToTaskResponse(Task task) {
+        WorkflowTaskResponse response = new WorkflowTaskResponse();
+        response.setTaskId(task.getId());
+        response.setTaskName(task.getName());
+        response.setTaskDefinitionKey(task.getTaskDefinitionKey());
+        response.setProcessInstanceId(task.getProcessInstanceId());
+        response.setAssignee(task.getAssignee());
+        response.setCreated(task.getCreateTime());
+        response.setDueDate(task.getDueDate());
+        response.setPriority(task.getPriority());
+        response.setDescription(task.getDescription());
+        response.setFormKey(task.getFormKey());
+        
+        // Get process variables
+        Map<String, Object> variables = taskService.getVariables(task.getId());
+        response.setVariables(variables);
+        
+        return response;
     }
 
     @PostMapping("/tasks/{taskId}/complete")

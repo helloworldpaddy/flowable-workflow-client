@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="001-create-composite-indexes" author="cms-system" runOnChange="false">
+        <comment>Create composite indexes for improved query performance</comment>
+        
+        <!-- Composite index for case queries by status and priority -->
+        <createIndex indexName="idx_cases_status_priority_created" tableName="cases" schemaName="cms_flowable_workflow">
+            <column name="status"/>
+            <column name="priority"/>
+            <column name="created_at"/>
+        </createIndex>
+        
+        <!-- Composite index for case assignment queries -->
+        <createIndex indexName="idx_cases_assigned_status_updated" tableName="cases" schemaName="cms_flowable_workflow">
+            <column name="assigned_to"/>
+            <column name="status"/>
+            <column name="updated_at"/>
+        </createIndex>
+        
+        <!-- Composite index for work item queries -->
+        <createIndex indexName="idx_work_items_status_assigned_priority" tableName="work_items" schemaName="cms_flowable_workflow">
+            <column name="status"/>
+            <column name="assigned_to"/>
+            <column name="priority"/>
+        </createIndex>
+        
+        <!-- Composite index for allegation searches -->
+        <createIndex indexName="idx_allegations_type_severity_status" tableName="allegations" schemaName="cms_flowable_workflow">
+            <column name="allegation_type"/>
+            <column name="severity"/>
+            <column name="status"/>
+        </createIndex>
+        
+        <!-- Composite index for user role queries -->
+        <createIndex indexName="idx_user_roles_active_assigned" tableName="user_roles" schemaName="cms_flowable_workflow">
+            <column name="is_active"/>
+            <column name="assigned_date"/>
+            <column name="expiry_date"/>
+        </createIndex>
+
+        <rollback>
+            <dropIndex indexName="idx_user_roles_active_assigned" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_allegations_type_severity_status" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_work_items_status_assigned_priority" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_cases_assigned_status_updated" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_cases_status_priority_created" schemaName="cms_flowable_workflow"/>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="002-create-partial-indexes" author="cms-system" runOnChange="false">
+        <comment>Create partial indexes for filtered queries</comment>
+        
+        <!-- Partial index for active cases only -->
+        <sql>
+            CREATE INDEX idx_cases_active_only 
+            ON cms_flowable_workflow.cases (created_at, priority) 
+            WHERE status IN ('OPEN', 'IN_PROGRESS', 'UNDER_REVIEW');
+        </sql>
+        
+        <!-- Partial index for unread notifications -->
+        <sql>
+            CREATE INDEX idx_notifications_unread 
+            ON cms_flowable_workflow.notifications (recipient_user_id, created_at) 
+            WHERE is_read = false;
+        </sql>
+        
+        <!-- Partial index for active user sessions -->
+        <sql>
+            CREATE INDEX idx_user_sessions_active 
+            ON cms_flowable_workflow.user_sessions (user_id, last_activity) 
+            WHERE is_active = true;
+        </sql>
+        
+        <!-- Partial index for pending work items -->
+        <sql>
+            CREATE INDEX idx_work_items_pending 
+            ON cms_flowable_workflow.work_items (assigned_group, created_at) 
+            WHERE status IN ('OPEN', 'IN_PROGRESS');
+        </sql>
+
+        <rollback>
+            <sql>DROP INDEX IF EXISTS cms_flowable_workflow.idx_work_items_pending;</sql>
+            <sql>DROP INDEX IF EXISTS cms_flowable_workflow.idx_user_sessions_active;</sql>
+            <sql>DROP INDEX IF EXISTS cms_flowable_workflow.idx_notifications_unread;</sql>
+            <sql>DROP INDEX IF EXISTS cms_flowable_workflow.idx_cases_active_only;</sql>
+        </rollback>
+    </changeSet>
+
+    <changeSet id="003-create-gin-indexes" author="cms-system" runOnChange="false">
+        <comment>Create GIN indexes for full-text search and JSON queries</comment>
+        
+        <!-- GIN index for full-text search on case descriptions -->
+        <sql>
+            CREATE INDEX idx_cases_description_fulltext 
+            ON cms_flowable_workflow.cases 
+            USING gin(to_tsvector('english', coalesce(description, '') || ' ' || coalesce(title, '')));
+        </sql>
+        
+        <!-- GIN index for full-text search on allegations -->
+        <sql>
+            CREATE INDEX idx_allegations_description_fulltext 
+            ON cms_flowable_workflow.allegations 
+            USING gin(to_tsvector('english', coalesce(description, '') || ' ' || coalesce(allegation_type, '')));
+        </sql>
+        
+        <!-- GIN index for JSONB audit log queries -->
+        <sql>
+            CREATE INDEX idx_audit_log_old_values_gin 
+            ON cms_flowable_workflow.audit_log 
+            USING gin(old_values);
+        </sql>
+        
+        <sql>
+            CREATE INDEX idx_audit_log_new_values_gin 
+            ON cms_flowable_workflow.audit_log 
+            USING gin(new_values);
+        </sql>
+        
+        <!-- GIN index for user session data -->
+        <sql>
+            CREATE INDEX idx_user_sessions_data_gin 
+            ON cms_flowable_workflow.user_sessions 
+            USING gin(session_data);
+        </sql>
+
+        <rollback>
+            <sql>DROP INDEX IF EXISTS cms_flowable_workflow.idx_user_sessions_data_gin;</sql>
+            <sql>DROP INDEX IF EXISTS cms_flowable_workflow.idx_audit_log_new_values_gin;</sql>
+            <sql>DROP INDEX IF EXISTS cms_flowable_workflow.idx_audit_log_old_values_gin;</sql>
+            <sql>DROP INDEX IF EXISTS cms_flowable_workflow.idx_allegations_description_fulltext;</sql>
+            <sql>DROP INDEX IF EXISTS cms_flowable_workflow.idx_cases_description_fulltext;</sql>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

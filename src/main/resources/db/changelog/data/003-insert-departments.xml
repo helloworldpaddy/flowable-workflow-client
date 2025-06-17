@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="001-insert-departments" author="cms-system" runOnChange="false">
+        <comment>Insert organizational departments for case assignment and routing</comment>
+        
+        <!-- Root/Executive Level -->
+        <insert tableName="departments" schemaName="cms_flowable_workflow">
+            <column name="department_code" value="EXEC"/>
+            <column name="department_name" value="Executive Office"/>
+            <column name="department_description" value="Executive leadership and oversight"/>
+            <column name="parent_department_id" valueComputed="NULL"/>
+            <column name="is_active" value="true"/>
+        </insert>
+        
+        <!-- Ethics Office -->
+        <insert tableName="departments" schemaName="cms_flowable_workflow">
+            <column name="department_code" value="ETHICS"/>
+            <column name="department_name" value="Ethics Office"/>
+            <column name="department_description" value="Central ethics office responsible for case management"/>
+            <column name="parent_department_id" valueComputed="(SELECT department_id FROM cms_flowable_workflow.departments WHERE department_code = 'EXEC')"/>
+            <column name="is_active" value="true"/>
+        </insert>
+
+        <!-- Investigation Unit -->
+        <insert tableName="departments" schemaName="cms_flowable_workflow">
+            <column name="department_code" value="IU"/>
+            <column name="department_name" value="Investigation Unit"/>
+            <column name="department_description" value="Specialized investigation unit for complex cases"/>
+            <column name="parent_department_id" valueComputed="(SELECT department_id FROM cms_flowable_workflow.departments WHERE department_code = 'ETHICS')"/>
+            <column name="is_active" value="true"/>
+        </insert>
+
+        <!-- Human Resources -->
+        <insert tableName="departments" schemaName="cms_flowable_workflow">
+            <column name="department_code" value="HR"/>
+            <column name="department_name" value="Human Resources"/>
+            <column name="department_description" value="Human resources department handling employment-related cases"/>
+            <column name="parent_department_id" valueComputed="(SELECT department_id FROM cms_flowable_workflow.departments WHERE department_code = 'EXEC')"/>
+            <column name="is_active" value="true"/>
+        </insert>
+
+        <!-- Legal Department -->
+        <insert tableName="departments" schemaName="cms_flowable_workflow">
+            <column name="department_code" value="LEGAL"/>
+            <column name="department_name" value="Legal Department"/>
+            <column name="department_description" value="Legal counsel and compliance oversight"/>
+            <column name="parent_department_id" valueComputed="(SELECT department_id FROM cms_flowable_workflow.departments WHERE department_code = 'EXEC')"/>
+            <column name="is_active" value="true"/>
+        </insert>
+
+        <!-- Security Department -->
+        <insert tableName="departments" schemaName="cms_flowable_workflow">
+            <column name="department_code" value="SECURITY"/>
+            <column name="department_name" value="Security Department"/>
+            <column name="department_description" value="Physical and information security"/>
+            <column name="parent_department_id" valueComputed="(SELECT department_id FROM cms_flowable_workflow.departments WHERE department_code = 'EXEC')"/>
+            <column name="is_active" value="true"/>
+        </insert>
+
+        <!-- CSIS (Canadian Security Intelligence Service) -->
+        <insert tableName="departments" schemaName="cms_flowable_workflow">
+            <column name="department_code" value="CSIS"/>
+            <column name="department_name" value="CSIS Liaison"/>
+            <column name="department_description" value="Canadian Security Intelligence Service liaison"/>
+            <column name="parent_department_id" valueComputed="(SELECT department_id FROM cms_flowable_workflow.departments WHERE department_code = 'SECURITY')"/>
+            <column name="is_active" value="true"/>
+        </insert>
+
+        <!-- Finance Department -->
+        <insert tableName="departments" schemaName="cms_flowable_workflow">
+            <column name="department_code" value="FINANCE"/>
+            <column name="department_name" value="Finance Department"/>
+            <column name="department_description" value="Financial oversight and fraud investigation"/>
+            <column name="parent_department_id" valueComputed="(SELECT department_id FROM cms_flowable_workflow.departments WHERE department_code = 'EXEC')"/>
+            <column name="is_active" value="true"/>
+        </insert>
+
+        <!-- Audit Department -->
+        <insert tableName="departments" schemaName="cms_flowable_workflow">
+            <column name="department_code" value="AUDIT"/>
+            <column name="department_name" value="Internal Audit"/>
+            <column name="department_description" value="Internal audit and compliance monitoring"/>
+            <column name="parent_department_id" valueComputed="(SELECT department_id FROM cms_flowable_workflow.departments WHERE department_code = 'FINANCE')"/>
+            <column name="is_active" value="true"/>
+        </insert>
+
+        <!-- IT Department -->
+        <insert tableName="departments" schemaName="cms_flowable_workflow">
+            <column name="department_code" value="IT"/>
+            <column name="department_name" value="Information Technology"/>
+            <column name="department_description" value="Information technology and cybersecurity"/>
+            <column name="parent_department_id" valueComputed="(SELECT department_id FROM cms_flowable_workflow.departments WHERE department_code = 'SECURITY')"/>
+            <column name="is_active" value="true"/>
+        </insert>
+
+        <!-- Operations Department -->
+        <insert tableName="departments" schemaName="cms_flowable_workflow">
+            <column name="department_code" value="OPS"/>
+            <column name="department_name" value="Operations"/>
+            <column name="department_description" value="Operational departments and field offices"/>
+            <column name="parent_department_id" valueComputed="(SELECT department_id FROM cms_flowable_workflow.departments WHERE department_code = 'EXEC')"/>
+            <column name="is_active" value="true"/>
+        </insert>
+
+        <!-- Specialized Units -->
+        <insert tableName="departments" schemaName="cms_flowable_workflow">
+            <column name="department_code" value="COMPLIANCE"/>
+            <column name="department_name" value="Compliance Unit"/>
+            <column name="department_description" value="Regulatory compliance and policy enforcement"/>
+            <column name="parent_department_id" valueComputed="(SELECT department_id FROM cms_flowable_workflow.departments WHERE department_code = 'LEGAL')"/>
+            <column name="is_active" value="true"/>
+        </insert>
+
+        <insert tableName="departments" schemaName="cms_flowable_workflow">
+            <column name="department_code" value="RISK"/>
+            <column name="department_name" value="Risk Management"/>
+            <column name="department_description" value="Enterprise risk management and assessment"/>
+            <column name="parent_department_id" valueComputed="(SELECT department_id FROM cms_flowable_workflow.departments WHERE department_code = 'EXEC')"/>
+            <column name="is_active" value="true"/>
+        </insert>
+
+        <!-- General Classification -->
+        <insert tableName="departments" schemaName="cms_flowable_workflow">
+            <column name="department_code" value="GENERAL"/>
+            <column name="department_name" value="General Assignment"/>
+            <column name="department_description" value="Cases not specifically assigned to other departments"/>
+            <column name="parent_department_id" valueComputed="(SELECT department_id FROM cms_flowable_workflow.departments WHERE department_code = 'ETHICS')"/>
+            <column name="is_active" value="true"/>
+        </insert>
+
+        <rollback>
+            <!-- Delete in reverse order to respect foreign key constraints -->
+            <delete tableName="departments" schemaName="cms_flowable_workflow">
+                <where>department_code = 'GENERAL'</where>
+            </delete>
+            <delete tableName="departments" schemaName="cms_flowable_workflow">
+                <where>department_code = 'RISK'</where>
+            </delete>
+            <delete tableName="departments" schemaName="cms_flowable_workflow">
+                <where>department_code = 'COMPLIANCE'</where>
+            </delete>
+            <delete tableName="departments" schemaName="cms_flowable_workflow">
+                <where>department_code = 'OPS'</where>
+            </delete>
+            <delete tableName="departments" schemaName="cms_flowable_workflow">
+                <where>department_code = 'IT'</where>
+            </delete>
+            <delete tableName="departments" schemaName="cms_flowable_workflow">
+                <where>department_code = 'AUDIT'</where>
+            </delete>
+            <delete tableName="departments" schemaName="cms_flowable_workflow">
+                <where>department_code = 'FINANCE'</where>
+            </delete>
+            <delete tableName="departments" schemaName="cms_flowable_workflow">
+                <where>department_code = 'CSIS'</where>
+            </delete>
+            <delete tableName="departments" schemaName="cms_flowable_workflow">
+                <where>department_code = 'SECURITY'</where>
+            </delete>
+            <delete tableName="departments" schemaName="cms_flowable_workflow">
+                <where>department_code = 'LEGAL'</where>
+            </delete>
+            <delete tableName="departments" schemaName="cms_flowable_workflow">
+                <where>department_code = 'HR'</where>
+            </delete>
+            <delete tableName="departments" schemaName="cms_flowable_workflow">
+                <where>department_code = 'IU'</where>
+            </delete>
+            <delete tableName="departments" schemaName="cms_flowable_workflow">
+                <where>department_code = 'ETHICS'</where>
+            </delete>
+            <delete tableName="departments" schemaName="cms_flowable_workflow">
+                <where>department_code = 'EXEC'</where>
+            </delete>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

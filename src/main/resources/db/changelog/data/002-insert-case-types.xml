@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+    <changeSet id="001-insert-case-types" author="cms-system" runOnChange="false">
+        <comment>Insert standard case types for CMS workflow</comment>
+        
+        <!-- Ethics and Misconduct -->
+        <insert tableName="case_types" schemaName="cms_flowable_workflow">
+            <column name="type_code" value="MISCONDUCT"/>
+            <column name="type_name" value="Employee Misconduct"/>
+            <column name="type_description" value="Cases involving employee misconduct, policy violations, or unethical behavior"/>
+            <column name="workflow_process_key" value="Process_CMS_Workflow"/>
+            <column name="default_priority" value="HIGH"/>
+            <column name="sla_days" value="30"/>
+            <column name="is_active" value="true"/>
+        </insert>
+        
+        <insert tableName="case_types" schemaName="cms_flowable_workflow">
+            <column name="type_code" value="HARASSMENT"/>
+            <column name="type_name" value="Harassment"/>
+            <column name="type_description" value="Sexual harassment, workplace harassment, or discrimination cases"/>
+            <column name="workflow_process_key" value="Process_CMS_Workflow"/>
+            <column name="default_priority" value="CRITICAL"/>
+            <column name="sla_days" value="15"/>
+            <column name="is_active" value="true"/>
+        </insert>
+        
+        <insert tableName="case_types" schemaName="cms_flowable_workflow">
+            <column name="type_code" value="FRAUD"/>
+            <column name="type_name" value="Fraud Investigation"/>
+            <column name="type_description" value="Financial fraud, embezzlement, or misuse of resources"/>
+            <column name="workflow_process_key" value="Process_CMS_Workflow"/>
+            <column name="default_priority" value="CRITICAL"/>
+            <column name="sla_days" value="45"/>
+            <column name="is_active" value="true"/>
+        </insert>
+        
+        <insert tableName="case_types" schemaName="cms_flowable_workflow">
+            <column name="type_code" value="CORRUPTION"/>
+            <column name="type_name" value="Corruption"/>
+            <column name="type_description" value="Bribery, corruption, or conflict of interest cases"/>
+            <column name="workflow_process_key" value="Process_CMS_Workflow"/>
+            <column name="default_priority" value="CRITICAL"/>
+            <column name="sla_days" value="60"/>
+            <column name="is_active" value="true"/>
+        </insert>
+
+        <!-- Security and Safety -->
+        <insert tableName="case_types" schemaName="cms_flowable_workflow">
+            <column name="type_code" value="SECURITY"/>
+            <column name="type_name" value="Security Incident"/>
+            <column name="type_description" value="Security violations, data breaches, or unauthorized access"/>
+            <column name="workflow_process_key" value="Process_CMS_Workflow"/>
+            <column name="default_priority" value="URGENT"/>
+            <column name="sla_days" value="7"/>
+            <column name="is_active" value="true"/>
+        </insert>
+        
+        <insert tableName="case_types" schemaName="cms_flowable_workflow">
+            <column name="type_code" value="SAFETY"/>
+            <column name="type_name" value="Safety Violation"/>
+            <column name="type_description" value="Workplace safety violations or hazardous conditions"/>
+            <column name="workflow_process_key" value="Process_CMS_Workflow"/>
+            <column name="default_priority" value="HIGH"/>
+            <column name="sla_days" value="10"/>
+            <column name="is_active" value="true"/>
+        </insert>
+
+        <!-- Policy and Compliance -->
+        <insert tableName="case_types" schemaName="cms_flowable_workflow">
+            <column name="type_code" value="POLICY"/>
+            <column name="type_name" value="Policy Violation"/>
+            <column name="type_description" value="Violations of organizational policies or procedures"/>
+            <column name="workflow_process_key" value="Process_CMS_Workflow"/>
+            <column name="default_priority" value="MEDIUM"/>
+            <column name="sla_days" value="20"/>
+            <column name="is_active" value="true"/>
+        </insert>
+        
+        <insert tableName="case_types" schemaName="cms_flowable_workflow">
+            <column name="type_code" value="COMPLIANCE"/>
+            <column name="type_name" value="Compliance Issue"/>
+            <column name="type_description" value="Regulatory compliance violations or issues"/>
+            <column name="workflow_process_key" value="Process_CMS_Workflow"/>
+            <column name="default_priority" value="HIGH"/>
+            <column name="sla_days" value="30"/>
+            <column name="is_active" value="true"/>
+        </insert>
+
+        <!-- Environmental and Operational -->
+        <insert tableName="case_types" schemaName="cms_flowable_workflow">
+            <column name="type_code" value="ENVIRONMENTAL"/>
+            <column name="type_name" value="Environmental Incident"/>
+            <column name="type_description" value="Environmental violations or incidents"/>
+            <column name="workflow_process_key" value="Process_CMS_Workflow"/>
+            <column name="default_priority" value="HIGH"/>
+            <column name="sla_days" value="14"/>
+            <column name="is_active" value="true"/>
+        </insert>
+        
+        <insert tableName="case_types" schemaName="cms_flowable_workflow">
+            <column name="type_code" value="OPERATIONAL"/>
+            <column name="type_name" value="Operational Issue"/>
+            <column name="type_description" value="Operational problems or process failures"/>
+            <column name="workflow_process_key" value="Process_CMS_Workflow"/>
+            <column name="default_priority" value="MEDIUM"/>
+            <column name="sla_days" value="30"/>
+            <column name="is_active" value="true"/>
+        </insert>
+
+        <!-- Other Categories -->
+        <insert tableName="case_types" schemaName="cms_flowable_workflow">
+            <column name="type_code" value="WHISTLEBLOWER"/>
+            <column name="type_name" value="Whistleblower Report"/>
+            <column name="type_description" value="Protected disclosures and whistleblower reports"/>
+            <column name="workflow_process_key" value="Process_CMS_Workflow"/>
+            <column name="default_priority" value="HIGH"/>
+            <column name="sla_days" value="30"/>
+            <column name="is_active" value="true"/>
+        </insert>
+        
+        <insert tableName="case_types" schemaName="cms_flowable_workflow">
+            <column name="type_code" value="GENERAL"/>
+            <column name="type_name" value="General Inquiry"/>
+            <column name="type_description" value="General inquiries or unclassified cases"/>
+            <column name="workflow_process_key" value="Process_CMS_Workflow"/>
+            <column name="default_priority" value="LOW"/>
+            <column name="sla_days" value="45"/>
+            <column name="is_active" value="true"/>
+        </insert>
+
+        <rollback>
+            <delete tableName="case_types" schemaName="cms_flowable_workflow">
+                <where>type_code IN ('MISCONDUCT', 'HARASSMENT', 'FRAUD', 'CORRUPTION', 'SECURITY', 'SAFETY', 'POLICY', 'COMPLIANCE', 'ENVIRONMENTAL', 'OPERATIONAL', 'WHISTLEBLOWER', 'GENERAL')</where>
+            </delete>
+        </rollback>
+    </changeSet>
+
+</databaseChangeLog>

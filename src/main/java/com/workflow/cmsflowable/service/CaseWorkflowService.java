@@ -43,11 +43,11 @@ public class CaseWorkflowService {
     private static final String CASE_WORKFLOW_PROCESS_KEY = "Process_CMS_Workflow";
     
     public CaseWithAllegationsResponse createCaseWithWorkflow(CreateCaseWithAllegationsRequest request) {
-        System.out.println("🚀 STARTING FULL CASE CREATION AND WORKFLOW PROCESS!");
+        System.out.println("STARTING FULL CASE CREATION AND WORKFLOW PROCESS!");
         
         // Generate case number
         String caseNumber = generateCaseNumber();
-        System.out.println("📋 Generated case number: " + caseNumber);
+        System.out.println("Generated case number: " + caseNumber);
         
         // Create case entity
         Case caseEntity = new Case();
@@ -62,24 +62,28 @@ public class CaseWorkflowService {
         
         // Save case to database
         Case savedCase = caseRepository.save(caseEntity);
-        System.out.println("💾 Case saved to database with ID: " + savedCase.getCaseId());
+        System.out.println("Case saved to database with ID: " + savedCase.getCaseId());
         
         // Create work items (allegations) in work_items table
         List<WorkItemEntity> workItems = new ArrayList<>();
         int allegationCounter = 1;
+        Long baseCount = workItemRepository.count();
         
         for (CreateCaseWithAllegationsRequest.AllegationRequest allegationReq : request.getAllegations()) {
-            String workItemId = generateWorkItemId();
-            String workItemNumber = caseNumber + "-WI-" + String.format("%02d", allegationCounter++);
+            String workItemId = java.util.UUID.randomUUID().toString();
+            String workItemNumber = caseNumber + "-WI-" + String.format("%02d", allegationCounter);
             
             WorkItemEntity workItem = new WorkItemEntity();
             workItem.setWorkItemId(workItemId);
             workItem.setWorkItemNumber(workItemNumber);
+            workItem.setCaseId(savedCase.getCaseId());
             workItem.setType(allegationReq.getAllegationType());
             workItem.setSeverity(allegationReq.getSeverity().toString());
             workItem.setDescription(allegationReq.getDescription());
             workItem.setStatus("OPEN");
             workItem.setPriority(request.getPriority().toString());
+            
+            allegationCounter++;
             
             // Classify based on allegation type
             String classification = classifyAllegation(allegationReq.getAllegationType());
@@ -87,12 +91,27 @@ public class CaseWorkflowService {
             workItem.setAssignedGroup(getAssignedGroup(classification));
             
             workItems.add(workItem);
-            System.out.println("📝 Created work item: " + workItemNumber + " for " + allegationReq.getAllegationType());
+            System.out.println("Created work item: " + workItemNumber + " for " + allegationReq.getAllegationType());
         }
         
         // Save work items to database
-        List<WorkItemEntity> savedWorkItems = workItemRepository.saveAll(workItems);
-        System.out.println("💾 Saved " + savedWorkItems.size() + " work items to database");
+        System.out.println("Attempting to save " + workItems.size() + " work items to database");
+        for (WorkItemEntity workItem : workItems) {
+            System.out.println("Work item to save: " + workItem.getWorkItemNumber() + " (ID: " + workItem.getWorkItemId() + ")");
+        }
+        
+        List<WorkItemEntity> savedWorkItems;
+        try {
+            savedWorkItems = workItemRepository.saveAll(workItems);
+            System.out.println("Successfully saved " + savedWorkItems.size() + " work items to database");
+            for (WorkItemEntity savedItem : savedWorkItems) {
+                System.out.println("Saved work item: " + savedItem.getWorkItemNumber() + " (ID: " + savedItem.getWorkItemId() + ")");
+            }
+        } catch (Exception e) {
+            System.err.println("Error saving work items: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to save work items: " + e.getMessage(), e);
+        }
         
         // Prepare workflow variables
         Map<String, Object> workflowVariables = new HashMap<>();
@@ -111,20 +130,37 @@ public class CaseWorkflowService {
             workflowVariables.put("classification", primaryWorkItem.getClassification());
         }
         
-        // Create allegations list for workflow
+        // Create allegations list for multi-instance workflow
         List<Map<String, Object>> allegationsForWorkflow = new ArrayList<>();
         for (WorkItemEntity workItem : savedWorkItems) {
-            Map<String, Object> allegationMap = new HashMap<>();
-            allegationMap.put("workItemId", workItem.getWorkItemId());
-            allegationMap.put("allegationType", workItem.getType());
-            allegationMap.put("severity", workItem.getSeverity());
-            allegationMap.put("classification", workItem.getClassification());
-            allegationMap.put("assignedGroup", workItem.getAssignedGroup());
-            allegationsForWorkflow.add(allegationMap);
+            Map<String, Object> workItemMap = new HashMap<>();
+            workItemMap.put("workItemId", workItem.getWorkItemId());
+            workItemMap.put("workItemNumber", workItem.getWorkItemNumber());
+            workItemMap.put("description", workItem.getDescription());
+            workItemMap.put("allegationType", workItem.getType());
+            workItemMap.put("severity", workItem.getSeverity());
+            workItemMap.put("classification", workItem.getClassification());
+            workItemMap.put("assignedGroup", workItem.getAssignedGroup());
+            workItemMap.put("priority", workItem.getPriority());
+            workItemMap.put("status", workItem.getStatus());
+            workItemMap.put("caseId", workItem.getCaseId());
+            allegationsForWorkflow.add(workItemMap);
         }
         workflowVariables.put("allegations", allegationsForWorkflow);
         
-        System.out.println("🔧 Prepared workflow variables: " + workflowVariables.keySet());
+        System.out.println("Prepared " + allegationsForWorkflow.size() + " work items for multi-instance processing:");
+        
+        // Determine which departments are needed based on classifications
+        boolean hrNeeded = savedWorkItems.stream().anyMatch(w -> "HR".equals(w.getClassification()));
+        boolean legalNeeded = savedWorkItems.stream().anyMatch(w -> "LEGAL".equals(w.getClassification()));
+        boolean csisNeeded = savedWorkItems.stream().anyMatch(w -> "CSIS".equals(w.getClassification()));
+        
+        workflowVariables.put("hrNeeded", hrNeeded);
+        workflowVariables.put("legalNeeded", legalNeeded);
+        workflowVariables.put("csisNeeded", csisNeeded);
+        
+        System.out.println("Department flags: HR=" + hrNeeded + ", Legal=" + legalNeeded + ", CSIS=" + csisNeeded);
+        System.out.println("Prepared workflow variables: " + workflowVariables.keySet());
         
         // Start Flowable BPMN workflow process
         try {
@@ -153,14 +189,14 @@ public class CaseWorkflowService {
             }
             workItemRepository.saveAll(savedWorkItems);
             
-            System.out.println("💾 Updated case and work items with process instance ID");
+            System.out.println("Updated case and work items with process instance ID");
             
             // Get active tasks
             List<Task> activeTasks = taskService.createTaskQuery()
                 .processInstanceId(processInstance.getId())
                 .list();
             
-            System.out.println("📋 Active tasks after workflow start: " + activeTasks.size());
+            System.out.println("Active tasks after workflow start: " + activeTasks.size());
             for (Task task : activeTasks) {
                 System.out.println("   - Task: " + task.getName() + " (ID: " + task.getId() + ")");
                 System.out.println("     Assignee: " + task.getAssignee());
@@ -175,7 +211,7 @@ public class CaseWorkflowService {
             }
             
         } catch (Exception e) {
-            System.err.println("❌ Error starting workflow: " + e.getMessage());
+            System.err.println("Error starting workflow: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Failed to start workflow process: " + e.getMessage(), e);
         }
@@ -183,7 +219,7 @@ public class CaseWorkflowService {
         // Convert work items back to allegations for response
         List<Allegation> allegationsForResponse = convertWorkItemsToAllegations(savedWorkItems, savedCase.getCaseNumber());
         
-        System.out.println("✅ CASE CREATION AND WORKFLOW COMPLETED SUCCESSFULLY!");
+        System.out.println("CASE CREATION AND WORKFLOW COMPLETED SUCCESSFULLY!");
         return convertToCaseWithAllegationsResponse(savedCase, allegationsForResponse);
     }
     
@@ -324,10 +360,8 @@ public class CaseWorkflowService {
             .map(IdentityLink::getGroupId)
             .collect(Collectors.toList());
         response.setCandidateGroups(String.join(",", candidateGroups));
-        response.setCreateTime(task.getCreateTime() != null ? 
-            task.getCreateTime().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime() : null);
-        response.setDueDate(task.getDueDate() != null ? 
-            task.getDueDate().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime() : null);
+        response.setCreated(task.getCreateTime());
+        response.setDueDate(task.getDueDate());
         response.setPriority(task.getPriority());
         response.setFormKey(task.getFormKey());
         response.setCategory(task.getCategory());
@@ -343,6 +377,11 @@ public class CaseWorkflowService {
     private String generateWorkItemId() {
         String prefix = "WI-" + java.time.Year.now() + "-";
         Long count = workItemRepository.count() + 1;
+        return prefix + String.format("%03d", count);
+    }
+    
+    private String generateWorkItemIdWithOffset(Long count) {
+        String prefix = "WI-" + java.time.Year.now() + "-";
         return prefix + String.format("%03d", count);
     }
     

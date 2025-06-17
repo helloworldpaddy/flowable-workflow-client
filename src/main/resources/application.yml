@@ -51,6 +51,12 @@ spring:
         order_updates: true
         jdbc.batch_size: 25
 
+  # Liquibase Configuration
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.xml
+    default-schema: cms_flowable_workflow
+    enabled: true
+
 # Flowable Configuration
 flowable:
   # Database Configuration
