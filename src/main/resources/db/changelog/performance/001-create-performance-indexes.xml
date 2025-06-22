@@ -44,11 +44,11 @@
         </createIndex>
 
         <rollback>
-            <dropIndex indexName="idx_user_roles_active_assigned" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_allegations_type_severity_status" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_work_items_status_assigned_priority" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_cases_assigned_status_updated" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_cases_status_priority_created" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_user_roles_active_assigned" tableName="user_roles" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_allegations_type_severity_status" tableName="allegations" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_work_items_status_assigned_priority" tableName="work_items" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_cases_assigned_status_updated" tableName="cases" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_cases_status_priority_created" tableName="cases" schemaName="cms_flowable_workflow"/>
         </rollback>
     </changeSet>
 

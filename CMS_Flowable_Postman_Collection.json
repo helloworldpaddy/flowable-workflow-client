@@ -63,7 +63,7 @@
 			"name": "Authentication",
 			"item": [
 				{
-					"name": "Login",
+					"name": "Login - Admin",
 					"event": [
 						{
 							"listen": "test",
@@ -72,11 +72,14 @@
 									"if (pm.response.code === 200) {",
 									"    const response = pm.response.json();",
 									"    pm.collectionVariables.set('auth_token', response.token);",
-									"    pm.test('Login successful', function () {",
+									"    pm.collectionVariables.set('current_user', response.user);",
+									"    pm.test('Admin login successful', function () {",
 									"        pm.response.to.have.status(200);",
+									"        pm.expect(response.token).to.not.be.empty;",
+									"        pm.expect(response.user.roles).to.include('ADMIN');",
 									"    });",
 									"} else {",
-									"    pm.test('Login failed', function () {",
+									"    pm.test('Admin login failed', function () {",
 									"        pm.response.to.have.status(401);",
 									"    });",
 									"}"
@@ -101,6 +104,260 @@
 							"raw": "{{base_url}}/auth/login",
 							"host": ["{{base_url}}"],
 							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Login - Intake Officer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('auth_token', response.token);",
+									"    pm.collectionVariables.set('current_user', response.user);",
+									"    pm.test('Intake Officer login successful', function () {",
+									"        pm.response.to.have.status(200);",
+									"        pm.expect(response.token).to.not.be.empty;",
+									"        pm.expect(response.user.roles).to.include('INTAKE_OFFICER');",
+									"    });",
+									"} else {",
+									"    pm.test('Intake Officer login failed', function () {",
+									"        pm.response.to.have.status(401);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"intake.officer\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Login - HR Specialist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('auth_token', response.token);",
+									"    pm.collectionVariables.set('current_user', response.user);",
+									"    pm.test('HR Specialist login successful', function () {",
+									"        pm.response.to.have.status(200);",
+									"        pm.expect(response.token).to.not.be.empty;",
+									"        pm.expect(response.user.roles).to.include('HR_SPECIALIST');",
+									"    });",
+									"} else {",
+									"    pm.test('HR Specialist login failed', function () {",
+									"        pm.response.to.have.status(401);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"hr.specialist\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Login - Legal Counsel",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('auth_token', response.token);",
+									"    pm.collectionVariables.set('current_user', response.user);",
+									"    pm.test('Legal Counsel login successful', function () {",
+									"        pm.response.to.have.status(200);",
+									"        pm.expect(response.token).to.not.be.empty;",
+									"        pm.expect(response.user.roles).to.include('LEGAL_COUNSEL');",
+									"    });",
+									"} else {",
+									"    pm.test('Legal Counsel login failed', function () {",
+									"        pm.response.to.have.status(401);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"legal.counsel\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Login - CSIS Analyst",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    pm.collectionVariables.set('auth_token', response.token);",
+									"    pm.collectionVariables.set('current_user', response.user);",
+									"    pm.test('CSIS Analyst login successful', function () {",
+									"        pm.response.to.have.status(200);",
+									"        pm.expect(response.token).to.not.be.empty;",
+									"        pm.expect(response.user.roles).to.include('SECURITY_ANALYST');",
+									"    });",
+									"} else {",
+									"    pm.test('CSIS Analyst login failed', function () {",
+									"        pm.response.to.have.status(401);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"csis.analyst\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Validate Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Token validation', function () {",
+									"    if (pm.response.code === 200) {",
+									"        pm.test('Token is valid', function () {",
+									"            pm.response.to.have.status(200);",
+									"        });",
+									"    } else {",
+									"        pm.test('Token is invalid', function () {",
+									"            pm.response.to.have.status(401);",
+									"        });",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/validate",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "validate"]
+						}
+					}
+				},
+				{
+					"name": "Logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Logout successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Clear auth token on successful logout",
+									"if (pm.response.code === 200) {",
+									"    pm.collectionVariables.set('auth_token', '');",
+									"    pm.collectionVariables.set('current_user', '');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{auth_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/logout",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "logout"]
 						}
 					}
 				}

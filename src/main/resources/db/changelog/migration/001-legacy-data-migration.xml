@@ -25,10 +25,11 @@
     </changeSet>
 
     <changeSet id="002-migrate-existing-users" author="cms-system" runOnChange="false" runAlways="false">
-        <comment>Template for migrating existing user data</comment>
-        <preConditions onFail="MARK_RAN">
+            <preConditions onFail="MARK_RAN">
             <tableExists tableName="legacy_users" schemaName="cms_flowable_workflow"/>
         </preConditions>
+        <comment>Template for migrating existing user data</comment>
+
         
         <!-- Example migration from legacy table -->
         <sql>
@@ -61,10 +62,11 @@
     </changeSet>
 
     <changeSet id="003-migrate-existing-cases" author="cms-system" runOnChange="false" runAlways="false">
-        <comment>Template for migrating existing case data</comment>
-        <preConditions onFail="MARK_RAN">
+            <preConditions onFail="MARK_RAN">
             <tableExists tableName="legacy_cases" schemaName="cms_flowable_workflow"/>
         </preConditions>
+        <comment>Template for migrating existing case data</comment>
+
         
         <!-- Example migration from legacy cases -->
         <sql>
@@ -98,13 +100,14 @@
     </changeSet>
 
     <changeSet id="004-cleanup-legacy-tables" author="cms-system" runOnChange="false" runAlways="false">
-        <comment>Cleanup legacy tables after migration (USE WITH CAUTION)</comment>
-        <preConditions onFail="MARK_RAN">
+    <preConditions onFail="MARK_RAN">
             <and>
                 <tableExists tableName="legacy_users" schemaName="cms_flowable_workflow"/>
                 <tableExists tableName="legacy_cases" schemaName="cms_flowable_workflow"/>
             </and>
         </preConditions>
+        <comment>Cleanup legacy tables after migration (USE WITH CAUTION)</comment>
+        
         
         <!-- Rename legacy tables instead of dropping them for safety -->
         <sql>

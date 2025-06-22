@@ -6,7 +6,13 @@
                         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
     <changeSet id="001-create-foreign-key-constraints" author="cms-system" runOnChange="false">
+           <preConditions onFail="MARK_RAN">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_user_roles_user_id" schemaName="cms_flowable_workflow"/>
+            </not>
+        </preConditions>
         <comment>Create foreign key constraints for referential integrity</comment>
+        
         
         <!-- User relationships -->
         <addForeignKeyConstraint
@@ -157,7 +163,14 @@
     </changeSet>
 
     <changeSet id="002-create-audit-constraints" author="cms-system" runOnChange="false">
+            
+        <preConditions onFail="MARK_RAN">
+            <not>
+                <foreignKeyConstraintExists foreignKeyName="fk_case_transitions_case_id" schemaName="cms_flowable_workflow"/>
+            </not>
+        </preConditions>
         <comment>Create foreign key constraints for audit and monitoring tables</comment>
+
         
         <!-- Case transitions -->
         <addForeignKeyConstraint
@@ -246,6 +259,16 @@
             referencedTableSchemaName="cms_flowable_workflow"
             constraintName="fk_notifications_case"/>
         
+        <!-- Clean up invalid work item references before creating constraint -->
+        <sql>
+            UPDATE cms_flowable_workflow.notifications 
+            SET related_work_item_id = NULL 
+            WHERE related_work_item_id IS NOT NULL 
+            AND related_work_item_id::text NOT IN (
+                SELECT work_item_id::text FROM cms_flowable_workflow.work_items
+            );
+        </sql>
+        
         <addForeignKeyConstraint
             baseTableName="notifications" baseColumnNames="related_work_item_id"
             baseTableSchemaName="cms_flowable_workflow"
@@ -270,7 +293,13 @@
     </changeSet>
 
     <changeSet id="003-create-unique-constraints" author="cms-system" runOnChange="false">
+            <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists indexName="idx_user_roles_unique_active" schemaName="cms_flowable_workflow"/>
+            </not>
+        </preConditions>
         <comment>Create unique constraints for business rules</comment>
+    
         
         <!-- Ensure one active role assignment per user-role combination -->
         <sql>

@@ -8,7 +8,6 @@
     <!-- ============================================ -->
     <!-- CMS FLOWABLE DATABASE MIGRATION STRATEGY     -->
     <!-- ============================================ -->
-    
     <!-- Phase 1: Environment Setup and Schema Creation -->
     <include file="db/changelog/setup/001-environment-setup.xml"/>
     
@@ -39,5 +38,4 @@
     <!-- Phase 7: Security and Compliance -->
     <include file="db/changelog/security/001-create-security-policies.xml"/>
     <include file="db/changelog/security/002-create-audit-triggers.xml"/>
-
 </databaseChangeLog>

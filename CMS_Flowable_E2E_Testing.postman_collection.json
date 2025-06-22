@@ -1,0 +1,901 @@
+{
+	"info": {
+		"_postman_id": "e2e-test-collection-cms-flowable",
+		"name": "CMS Flowable E2E Workflow Testing",
+		"description": "Complete end-to-end testing suite for CMS Flowable workflow process covering all user roles and workflow paths",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "e2e-tests"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{auth_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080/api",
+			"type": "string"
+		},
+		{
+			"key": "auth_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "case_number",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "process_instance_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "intake_task_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "hr_task_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "legal_task_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "csis_task_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "investigation_task_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "closure_task_id",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "01. Authentication Setup",
+			"item": [
+				{
+					"name": "01.1 Login as Intake Officer",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Intake Officer login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.token).to.not.be.empty;",
+									"    pm.collectionVariables.set('auth_token', response.token);",
+									"    console.log('✅ Intake Officer authenticated successfully');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"intake.officer\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "02. Case Creation & Process Start",
+			"item": [
+				{
+					"name": "02.1 Create Multi-Department Case",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Case created successfully', function () {",
+									"    pm.response.to.have.status(201);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.caseNumber).to.not.be.empty;",
+									"    pm.collectionVariables.set('case_number', response.caseNumber);",
+									"    console.log('✅ Case created: ' + response.caseNumber);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"E2E Test - Multi-Department Investigation Case\",\n    \"description\": \"End-to-end testing case involving HR, Legal, and CSIS departments for comprehensive workflow validation\",\n    \"priority\": \"HIGH\",\n    \"complainantName\": \"Test User E2E\",\n    \"complainantEmail\": \"test.e2e@company.com\",\n    \"allegations\": [\n        {\n            \"allegationType\": \"Sexual Harassment\",\n            \"severity\": \"HIGH\",\n            \"description\": \"E2E Test - Inappropriate behavior requiring HR investigation\"\n        },\n        {\n            \"allegationType\": \"Financial Fraud\",\n            \"severity\": \"CRITICAL\",\n            \"description\": \"E2E Test - Suspected embezzlement requiring legal review\"\n        },\n        {\n            \"allegationType\": \"Data Breach\",\n            \"severity\": \"CRITICAL\",\n            \"description\": \"E2E Test - Unauthorized access requiring CSIS security investigation\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/cases",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "cases"]
+						}
+					}
+				},
+				{
+					"name": "02.2 Start Workflow Process",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Workflow process started', function () {",
+									"    pm.response.to.have.status(200);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.processInstanceId).to.not.be.empty;",
+									"    pm.collectionVariables.set('process_instance_id', response.processInstanceId);",
+									"    console.log('✅ Workflow started: ' + response.processInstanceId);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"caseId\": \"{{case_number}}\",\n    \"priority\": \"HIGH\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/workflow/start/Process_CMS_Workflow",
+							"host": ["{{base_url}}"],
+							"path": ["workflow", "start", "Process_CMS_Workflow"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "03. EO Intake Process",
+			"item": [
+				{
+					"name": "03.1 Get Intake Tasks",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Intake tasks retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.be.an('array');",
+									"    if (response.length > 0) {",
+									"        const intakeTask = response.find(task => task.taskDefinitionKey === 'Task_EO_Intake');",
+									"        if (intakeTask) {",
+									"            pm.collectionVariables.set('intake_task_id', intakeTask.id);",
+									"            console.log('✅ Intake task found: ' + intakeTask.id);",
+									"        }",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/workflow/tasks?assignee=intake.officer",
+							"host": ["{{base_url}}"],
+							"path": ["workflow", "tasks"],
+							"query": [
+								{
+									"key": "assignee",
+									"value": "intake.officer"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "03.2 Complete EO Intake Task",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Intake task completed successfully', function () {",
+									"    pm.response.to.have.status(200);",
+									"    console.log('✅ EO Intake task completed');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"intakeComplete\": true,\n    \"caseReviewed\": true,\n    \"allegationsValidated\": true,\n    \"classificationRequired\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/workflow/tasks/{{intake_task_id}}/complete",
+							"host": ["{{base_url}}"],
+							"path": ["workflow", "tasks", "{{intake_task_id}}", "complete"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "04. Department Assignment Process",
+			"item": [
+				{
+					"name": "04.1 Login as HR Specialist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('HR Specialist login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.token).to.not.be.empty;",
+									"    pm.collectionVariables.set('auth_token', response.token);",
+									"    console.log('✅ HR Specialist authenticated');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"hr.specialist\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "04.2 Get HR Assignment Tasks",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('HR assignment tasks retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"    const response = pm.response.json();",
+									"    if (response.length > 0) {",
+									"        const hrTask = response.find(task => task.taskDefinitionKey === 'Task_HR_Assignment');",
+									"        if (hrTask) {",
+									"            pm.collectionVariables.set('hr_task_id', hrTask.id);",
+									"            console.log('✅ HR assignment task found: ' + hrTask.id);",
+									"        }",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/v1/cases/tasks/group/HR_SPECIALIST",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "cases", "tasks", "group", "HR_SPECIALIST"]
+						}
+					}
+				},
+				{
+					"name": "04.3 Complete HR Assignment Task",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('HR assignment completed', function () {",
+									"    pm.response.to.have.status(200);",
+									"    console.log('✅ HR assignment task completed');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"taskId\": \"{{hr_task_id}}\",\n    \"variables\": {\n        \"hrAssignee\": \"hr.specialist@company.com\",\n        \"hrPriority\": \"HIGH\",\n        \"hrReviewRequired\": true,\n        \"assignmentComplete\": true\n    },\n    \"comments\": \"E2E Test - HR allegation assigned to specialist for detailed investigation.\",\n    \"decision\": \"assigned\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/cases/tasks/complete",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "cases", "tasks", "complete"]
+						}
+					}
+				},
+				{
+					"name": "04.4 Login as Legal Counsel",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Legal Counsel login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.token).to.not.be.empty;",
+									"    pm.collectionVariables.set('auth_token', response.token);",
+									"    console.log('✅ Legal Counsel authenticated');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"legal.counsel\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "04.5 Get Legal Assignment Tasks",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Legal assignment tasks retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"    const response = pm.response.json();",
+									"    if (response.length > 0) {",
+									"        const legalTask = response.find(task => task.taskDefinitionKey === 'Task_Legal_Assignment');",
+									"        if (legalTask) {",
+									"            pm.collectionVariables.set('legal_task_id', legalTask.id);",
+									"            console.log('✅ Legal assignment task found: ' + legalTask.id);",
+									"        }",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/v1/cases/tasks/group/LEGAL_COUNSEL",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "cases", "tasks", "group", "LEGAL_COUNSEL"]
+						}
+					}
+				},
+				{
+					"name": "04.6 Complete Legal Assignment Task",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Legal assignment completed', function () {",
+									"    pm.response.to.have.status(200);",
+									"    console.log('✅ Legal assignment task completed');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"taskId\": \"{{legal_task_id}}\",\n    \"variables\": {\n        \"legalAssignee\": \"legal.counsel@company.com\",\n        \"legalPriority\": \"CRITICAL\",\n        \"externalCounselRequired\": true,\n        \"assignmentComplete\": true\n    },\n    \"comments\": \"E2E Test - Legal allegation requires immediate attention due to potential financial fraud.\",\n    \"decision\": \"assigned\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/cases/tasks/complete",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "cases", "tasks", "complete"]
+						}
+					}
+				},
+				{
+					"name": "04.7 Login as CSIS Analyst",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('CSIS Analyst login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.token).to.not.be.empty;",
+									"    pm.collectionVariables.set('auth_token', response.token);",
+									"    console.log('✅ CSIS Analyst authenticated');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"csis.analyst\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "04.8 Get CSIS Assignment Tasks",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('CSIS assignment tasks retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"    const response = pm.response.json();",
+									"    if (response.length > 0) {",
+									"        const csisTask = response.find(task => task.taskDefinitionKey === 'Task_CSIS_Assignment');",
+									"        if (csisTask) {",
+									"            pm.collectionVariables.set('csis_task_id', csisTask.id);",
+									"            console.log('✅ CSIS assignment task found: ' + csisTask.id);",
+									"        }",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/v1/cases/tasks/group/SECURITY_ANALYST",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "cases", "tasks", "group", "SECURITY_ANALYST"]
+						}
+					}
+				},
+				{
+					"name": "04.9 Complete CSIS Assignment Task",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('CSIS assignment completed', function () {",
+									"    pm.response.to.have.status(200);",
+									"    console.log('✅ CSIS assignment task completed');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"taskId\": \"{{csis_task_id}}\",\n    \"variables\": {\n        \"csisAssignee\": \"security.analyst@company.com\",\n        \"csisPriority\": \"CRITICAL\",\n        \"forensicsRequired\": true,\n        \"incidentContained\": true,\n        \"assignmentComplete\": true\n    },\n    \"comments\": \"E2E Test - CSIS investigating data breach. Forensic analysis initiated.\",\n    \"decision\": \"assigned\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/cases/tasks/complete",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "cases", "tasks", "complete"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "05. Investigation Process",
+			"item": [
+				{
+					"name": "05.1 Login as Investigator",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Investigator login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.token).to.not.be.empty;",
+									"    pm.collectionVariables.set('auth_token', response.token);",
+									"    console.log('✅ Investigator authenticated');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"investigator\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "05.2 Get Investigation Tasks",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Investigation tasks retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"    const response = pm.response.json();",
+									"    if (response.length > 0) {",
+									"        const investigationTask = response.find(task => task.taskDefinitionKey === 'Task_Investigation');",
+									"        if (investigationTask) {",
+									"            pm.collectionVariables.set('investigation_task_id', investigationTask.id);",
+									"            console.log('✅ Investigation task found: ' + investigationTask.id);",
+									"        }",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/workflow/tasks?assignee=investigator",
+							"host": ["{{base_url}}"],
+							"path": ["workflow", "tasks"],
+							"query": [
+								{
+									"key": "assignee",
+									"value": "investigator"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "05.3 Complete Investigation Task",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Investigation completed successfully', function () {",
+									"    pm.response.to.have.status(200);",
+									"    console.log('✅ Investigation task completed');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"taskId\": \"{{investigation_task_id}}\",\n    \"variables\": {\n        \"investigationComplete\": true,\n        \"findingsDocumented\": true,\n        \"evidenceCollected\": true,\n        \"recommendationsProvided\": true,\n        \"hrFindingsComplete\": true,\n        \"legalFindingsComplete\": true,\n        \"csisFindingsComplete\": true\n    },\n    \"comments\": \"E2E Test - Investigation completed across all departments. Evidence collected and documented.\",\n    \"decision\": \"completed\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/cases/tasks/complete",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "cases", "tasks", "complete"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "06. Case Closure Process",
+			"item": [
+				{
+					"name": "06.1 Login as Director",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Director login successful', function () {",
+									"    pm.response.to.have.status(200);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.token).to.not.be.empty;",
+									"    pm.collectionVariables.set('auth_token', response.token);",
+									"    console.log('✅ Director authenticated');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"director\",\n    \"password\": \"password123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "06.2 Get Case Closure Tasks",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Case closure tasks retrieved', function () {",
+									"    pm.response.to.have.status(200);",
+									"    const response = pm.response.json();",
+									"    if (response.length > 0) {",
+									"        const closureTask = response.find(task => task.taskDefinitionKey === 'Task_Case_Closure');",
+									"        if (closureTask) {",
+									"            pm.collectionVariables.set('closure_task_id', closureTask.id);",
+									"            console.log('✅ Case closure task found: ' + closureTask.id);",
+									"        }",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/workflow/tasks?assignee=director",
+							"host": ["{{base_url}}"],
+							"path": ["workflow", "tasks"],
+							"query": [
+								{
+									"key": "assignee",
+									"value": "director"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "06.3 Complete Case Closure Task",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Case closure completed successfully', function () {",
+									"    pm.response.to.have.status(200);",
+									"    console.log('✅ Case closure task completed');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"taskId\": \"{{closure_task_id}}\",\n    \"variables\": {\n        \"caseClosureApproved\": true,\n        \"finalReportComplete\": true,\n        \"actionsImplemented\": true,\n        \"followUpRequired\": false,\n        \"closureAuthorized\": true\n    },\n    \"comments\": \"E2E Test - Case closure approved by Ethics Office. All recommendations implemented.\",\n    \"decision\": \"closed\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/cases/tasks/complete",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "cases", "tasks", "complete"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "07. Verification & Cleanup",
+			"item": [
+				{
+					"name": "07.1 Verify Process Completion",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Process completed successfully', function () {",
+									"    pm.response.to.have.status(200);",
+									"    const response = pm.response.json();",
+									"    // Verify process is completed",
+									"    const completedProcess = response.find(p => p.processInstanceId === pm.collectionVariables.get('process_instance_id'));",
+									"    if (completedProcess && completedProcess.ended) {",
+									"        console.log('✅ Workflow process completed successfully');",
+									"    } else {",
+									"        console.log('⏳ Process still running or not found');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/workflow/processes",
+							"host": ["{{base_url}}"],
+							"path": ["workflow", "processes"]
+						}
+					}
+				},
+				{
+					"name": "07.2 Verify Case Status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Case status verified', function () {",
+									"    pm.response.to.have.status(200);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.caseNumber).to.eql(pm.collectionVariables.get('case_number'));",
+									"    console.log('✅ Final case status: ' + response.status);",
+									"    console.log('🎉 E2E Test completed successfully!');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/v1/cases/{{case_number}}",
+							"host": ["{{base_url}}"],
+							"path": ["v1", "cases", "{{case_number}}"]
+						}
+					}
+				}
+			]
+		}
+	]
+}

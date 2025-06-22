@@ -6,7 +6,13 @@
                         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
     <changeSet id="001-create-users-table" author="cms-system" runOnChange="false">
+            <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="users" schemaName="cms_flowable_workflow"/>
+            </not>
+        </preConditions>
         <comment>Create users table for authentication and authorization</comment>
+        
         
         <createTable tableName="users" schemaName="cms_flowable_workflow">
             <column name="user_id" type="BIGSERIAL">
@@ -50,6 +56,11 @@
     </changeSet>
 
     <changeSet id="002-create-roles-table" author="cms-system" runOnChange="false">
+            <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="roles" schemaName="cms_flowable_workflow"/>
+            </not>
+        </preConditions>
         <comment>Create roles table for role-based access control</comment>
         
         <createTable tableName="roles" schemaName="cms_flowable_workflow">
@@ -85,6 +96,11 @@
     </changeSet>
 
     <changeSet id="003-create-user-roles-table" author="cms-system" runOnChange="false">
+    <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="user_roles" schemaName="cms_flowable_workflow"/>
+            </not>
+        </preConditions>
         <comment>Create user_roles junction table for many-to-many relationship</comment>
         
         <createTable tableName="user_roles" schemaName="cms_flowable_workflow">
@@ -119,6 +135,11 @@
     </changeSet>
 
     <changeSet id="004-create-departments-table" author="cms-system" runOnChange="false">
+     <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="departments" schemaName="cms_flowable_workflow"/>
+            </not>
+        </preConditions>
         <comment>Create departments table for organizational structure</comment>
         
         <createTable tableName="departments" schemaName="cms_flowable_workflow">
@@ -153,6 +174,11 @@
     </changeSet>
 
     <changeSet id="005-create-case-types-table" author="cms-system" runOnChange="false">
+    <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="case_types" schemaName="cms_flowable_workflow"/>
+            </not>
+        </preConditions>
         <comment>Create case_types table for case categorization</comment>
         
         <createTable tableName="case_types" schemaName="cms_flowable_workflow">

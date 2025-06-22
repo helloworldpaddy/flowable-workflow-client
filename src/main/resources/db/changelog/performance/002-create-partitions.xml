@@ -143,7 +143,7 @@
                         month_part := substring(partition_record.tablename from 'm(\d{2})')::INTEGER;
                         partition_date := make_date(year_part, month_part, 1);
                         
-                        IF partition_date < cutoff_date THEN
+                        IF partition_date &lt; cutoff_date THEN
                             EXECUTE format('DROP TABLE IF EXISTS cms_flowable_workflow.%I', partition_record.tablename);
                             RAISE NOTICE 'Dropped old partition: %', partition_record.tablename;
                         END IF;

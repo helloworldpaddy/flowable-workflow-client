@@ -6,6 +6,11 @@
                         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
     <changeSet id="001-create-cases-table" author="cms-system" runOnChange="false">
+    <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="cases" schemaName="cms_flowable_workflow"/>
+            </not>
+        </preConditions>
         <comment>Create cases table for case management</comment>
         
         <createTable tableName="cases" schemaName="cms_flowable_workflow">
@@ -54,6 +59,11 @@
     </changeSet>
 
     <changeSet id="002-create-allegations-table" author="cms-system" runOnChange="false">
+    <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="allegations" schemaName="cms_flowable_workflow"/>
+            </not>
+        </preConditions>
         <comment>Create allegations table for case allegations</comment>
         
         <createTable tableName="allegations" schemaName="cms_flowable_workflow">
@@ -96,6 +106,11 @@
     </changeSet>
 
     <changeSet id="003-create-work-items-table" author="cms-system" runOnChange="false">
+    <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="work_items" schemaName="cms_flowable_workflow"/>
+            </not>
+        </preConditions>
         <comment>Create work_items table for workflow tasks</comment>
         
         <createTable tableName="work_items" schemaName="cms_flowable_workflow">
@@ -144,6 +159,11 @@
     </changeSet>
 
     <changeSet id="004-create-case-transitions-table" author="cms-system" runOnChange="false">
+    <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="case_transitions" schemaName="cms_flowable_workflow"/>
+            </not>
+        </preConditions>
         <comment>Create case_transitions table for audit trail of case status changes</comment>
         
         <createTable tableName="case_transitions" schemaName="cms_flowable_workflow">
@@ -175,6 +195,11 @@
     </changeSet>
 
     <changeSet id="005-create-case-comments-table" author="cms-system" runOnChange="false">
+    <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="case_comments" schemaName="cms_flowable_workflow"/>
+            </not>
+        </preConditions>
         <comment>Create case_comments table for case discussions and notes</comment>
         
         <createTable tableName="case_comments" schemaName="cms_flowable_workflow">
@@ -212,6 +237,11 @@
     </changeSet>
 
     <changeSet id="006-create-case-attachments-table" author="cms-system" runOnChange="false">
+    <preConditions onFail="MARK_RAN">
+            <not>
+                <tableExists tableName="case_attachments" schemaName="cms_flowable_workflow"/>
+            </not>
+        </preConditions>
         <comment>Create case_attachments table for file attachments</comment>
         
         <createTable tableName="case_attachments" schemaName="cms_flowable_workflow">

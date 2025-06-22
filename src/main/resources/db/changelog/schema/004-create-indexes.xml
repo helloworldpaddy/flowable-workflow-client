@@ -6,6 +6,12 @@
                         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
 
     <changeSet id="001-create-performance-indexes" author="cms-system" runOnChange="false">
+            <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists indexName="idx_users_username" schemaName="cms_flowable_workflow"/>
+            </not>
+        </preConditions>
+        
         <comment>Create indexes for performance optimization</comment>
         
         <!-- Users table indexes -->
@@ -134,41 +140,47 @@
         </createIndex>
 
         <rollback>
-            <dropIndex indexName="idx_work_items_flowable_task" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_work_items_flowable_process" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_work_items_priority" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_work_items_assigned_group" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_work_items_assigned_to" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_work_items_status" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_work_items_number" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_work_items_case_id" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_allegations_assigned_group" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_allegations_department" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_allegations_status" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_allegations_severity" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_allegations_type" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_allegations_case_id" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_cases_flowable_process" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_cases_workflow_instance" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_cases_department" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_cases_created_by" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_cases_created_at" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_cases_assigned_to" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_cases_priority" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_cases_status" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_cases_case_number" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_user_roles_active" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_user_roles_role_id" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_user_roles_user_id" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_users_created_at" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_users_status" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_users_email" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_users_username" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_work_items_flowable_task" tableName="work_items" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_work_items_flowable_process" tableName="work_items" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_work_items_priority" tableName="work_items" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_work_items_assigned_group" tableName="work_items" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_work_items_assigned_to" tableName="work_items" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_work_items_status" tableName="work_items" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_work_items_number" tableName="work_items" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_work_items_case_id" tableName="work_items" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_allegations_assigned_group" tableName="allegations" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_allegations_department" tableName="allegations" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_allegations_status" tableName="allegations" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_allegations_severity" tableName="allegations" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_allegations_type" tableName="allegations" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_allegations_case_id" tableName="allegations" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_cases_flowable_process" tableName="cases" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_cases_workflow_instance" tableName="cases" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_cases_department" tableName="cases" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_cases_created_by" tableName="cases" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_cases_created_at" tableName="cases" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_cases_assigned_to" tableName="cases" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_cases_priority" tableName="cases" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_cases_status" tableName="cases" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_cases_case_number" tableName="cases" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_user_roles_active" tableName="user_roles" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_user_roles_role_id" tableName="user_roles" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_user_roles_user_id" tableName="user_roles" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_users_created_at" tableName="users" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_users_status" tableName="users" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_users_email" tableName="users" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_users_username" tableName="users" schemaName="cms_flowable_workflow"/>
         </rollback>
     </changeSet>
 
     <changeSet id="002-create-audit-indexes" author="cms-system" runOnChange="false">
+            <preConditions onFail="MARK_RAN">
+            <not>
+                <indexExists indexName="idx_audit_log_table_record" schemaName="cms_flowable_workflow"/>
+            </not>
+        </preConditions>
         <comment>Create indexes for audit and monitoring tables</comment>
+        
         
         <!-- Audit log indexes -->
         <createIndex indexName="idx_audit_log_table_record" tableName="audit_log" schemaName="cms_flowable_workflow">
@@ -232,20 +244,20 @@
         </createIndex>
 
         <rollback>
-            <dropIndex indexName="idx_notifications_case" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_notifications_created_at" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_notifications_read_status" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_notifications_recipient" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_user_sessions_login_time" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_user_sessions_active" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_user_sessions_user_id" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_case_transitions_user" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_case_transitions_timestamp" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_case_transitions_case_id" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_audit_log_action_type" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_audit_log_timestamp" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_audit_log_user" schemaName="cms_flowable_workflow"/>
-            <dropIndex indexName="idx_audit_log_table_record" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_notifications_case" tableName="notifications" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_notifications_created_at" tableName="notifications" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_notifications_read_status" tableName="notifications" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_notifications_recipient" tableName="notifications" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_user_sessions_login_time" tableName="user_sessions" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_user_sessions_active" tableName="user_sessions" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_user_sessions_user_id" tableName="user_sessions" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_case_transitions_user" tableName="case_transitions" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_case_transitions_timestamp" tableName="case_transitions" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_case_transitions_case_id" tableName="case_transitions" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_audit_log_action_type" tableName="audit_log" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_audit_log_timestamp" tableName="audit_log" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_audit_log_user" tableName="audit_log" schemaName="cms_flowable_workflow"/>
+            <dropIndex indexName="idx_audit_log_table_record" tableName="audit_log" schemaName="cms_flowable_workflow"/>
         </rollback>
     </changeSet>
 
