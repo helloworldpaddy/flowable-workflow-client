@@ -2,13 +2,13 @@
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
                   xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
                   xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
-                  xmlns:flowable="http://flowable.org/bpmn" <!-- ADDED FLOWABLE NAMESPACE -- xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.4.0">
+                  xmlns:flowable="http://flowable.org/bpmn"
                   xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   id="Definitions_CMS_Process"
                   targetNamespace="http://bpmn.io/schema/bpmn"
-                  exporter="Flowable" <!-- Changed exporter -->
-                  exporterVersion="7.0.0.M1"> <!-- Updated exporter version, adjust as needed -->
+                  exporter="Flowable"
+                  exporterVersion="7.0.0.M1">
 
   <!-- Main CMS Process -->
   <bpmn:process id="Process_CMS_Workflow" name="CMS Workflow Process" isExecutable="true">
@@ -159,19 +159,19 @@
     <!-- Condition Expressions - Converted from FEEL to JUEL -->
     <!-- Assuming 'classification' is a List of Maps, where each map has a 'classification' key -->
     <bpmn:sequenceFlow id="Flow_to_HR" name="HR Cases" sourceRef="Gateway_Classification" targetRef="Task_CreateWorkItem">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${classification != null && classification.size() == 1 && classification.get(0).get("classification") == "HR"}</bpmn:conditionExpression>
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${classification != null &amp;&amp; classification.size() == 1 &amp;&amp; classification.get(0).get("classification") == "HR"}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
 
     <bpmn:sequenceFlow id="Flow_to_Legal" name="Legal Cases" sourceRef="Gateway_Classification" targetRef="Task_CreateWorkItem">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${classification != null && classification.size() == 1 && classification.get(0).get("classification") == "LEGAL"}</bpmn:conditionExpression>
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${classification != null &amp;&amp; classification.size() == 1 &amp;&amp; classification.get(0).get("classification") == "LEGAL"}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
 
     <bpmn:sequenceFlow id="Flow_to_CSIS" name="CSIS Cases" sourceRef="Gateway_Classification" targetRef="Task_CreateWorkItem">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${classification != null && classification.size() == 1 && classification.get(0).get("classification") == "CSIS"}</bpmn:conditionExpression>
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${classification != null &amp;&amp; classification.size() == 1 &amp;&amp; classification.get(0).get("classification") == "CSIS"}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
 
     <bpmn:sequenceFlow id="Flow_to_MultiInstance" name="Multi-Department Cases" sourceRef="Gateway_Classification" targetRef="SubProcess_DepartmentProcessing">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${classification != null && classification.size() > 1}</bpmn:conditionExpression>
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${classification != null &amp;&amp; classification.size() > 1}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
 
     <bpmn:sequenceFlow id="Flow_to_WorkItem" sourceRef="Task_CreateWorkItem" targetRef="Task_Investigation" />

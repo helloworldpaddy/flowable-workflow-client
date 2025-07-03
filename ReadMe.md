@@ -17,7 +17,7 @@
 
 ### Test User Authentication
 - **Username**: jow (or admin for Postman collection)
-- **Password**: password123
+- **Password**: demo123
 - **Login endpoint**: POST `/auth/login`
 - Use returned JWT token in Authorization header: `Bearer <token>`
 

@@ -6,7 +6,7 @@ import java.util.Map;
 
 
 @Entity
-@Table(name = "case_transitions",  schema = "cms_workflow")
+@Table(name = "case_transitions",  schema = "cms_flowable_workflow")
 public class CaseTransition {
     
     @Id

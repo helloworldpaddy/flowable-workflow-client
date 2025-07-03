@@ -12,7 +12,7 @@ import java.util.Optional;
 @Repository
 public interface WorkItemRepository extends JpaRepository<WorkItem, Long> {
     
-    Optional<WorkItem> findByWorkItemId(Long workItemId);
+    Optional<WorkItem> findByWorkItemId(String workItemId);
     Optional<WorkItem> findByTaskKey(Long taskKey);
     List<WorkItem> findByAssignedToUserIdAndStatus(Long userId, String status);
     List<WorkItem> findByStatus(String status);

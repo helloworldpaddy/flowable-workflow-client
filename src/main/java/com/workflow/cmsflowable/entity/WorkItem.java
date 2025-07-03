@@ -6,17 +6,19 @@ import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Year;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Entity
-@Table(name = "work_items",  schema = "cms_workflow")
+@Table(name = "work_items",  schema = "cms_flowable_workflow")
 public class WorkItem {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
-    @Column(name = "work_item_id", unique = true, nullable = false)
-    private Long workItemId;
+    @Column(name = "work_item_id", unique = true, nullable = false, length = 20)
+    private String workItemId;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "case_id", referencedColumnName = "case_id")
@@ -72,14 +74,18 @@ public class WorkItem {
         if (createdAt == null) {
             createdAt = LocalDateTime.now();
         }
+        if (workItemId == null) {
+            // This will be set by the service layer using database sequence
+            // Format: WI-YYYY-XXX (e.g., WI-2025-001)
+        }
     }
     
     // Getters and Setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     
-    public Long getWorkItemId() { return workItemId; }
-    public void setWorkItemId(Long workItemId) { this.workItemId = workItemId; }
+    public String getWorkItemId() { return workItemId; }
+    public void setWorkItemId(String workItemId) { this.workItemId = workItemId; }
     
     public Case getCaseEntity() { return caseEntity; }
     

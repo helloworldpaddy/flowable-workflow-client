@@ -17,7 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -67,7 +66,6 @@ public class CaseWorkflowService {
         // Create work items (allegations) in work_items table
         List<WorkItemEntity> workItems = new ArrayList<>();
         int allegationCounter = 1;
-        Long baseCount = workItemRepository.count();
         
         for (CreateCaseWithAllegationsRequest.AllegationRequest allegationReq : request.getAllegations()) {
             String workItemId = java.util.UUID.randomUUID().toString();
@@ -170,7 +168,7 @@ public class CaseWorkflowService {
                 workflowVariables
             );
             
-            System.out.println("🚀 Started Flowable workflow process!");
+            System.out.println("Started Flowable workflow process!");
             System.out.println("   Process Instance ID: " + processInstance.getId());
             System.out.println("   Process Definition ID: " + processInstance.getProcessDefinitionId());
             System.out.println("   Business Key: " + processInstance.getBusinessKey());
@@ -180,7 +178,7 @@ public class CaseWorkflowService {
             savedCase.setWorkflowInstanceKey((long) processInstance.getId().hashCode());
             savedCase = caseRepository.save(savedCase);
             
-            System.out.println("💾 Updated case with workflow instance hash: " + savedCase.getWorkflowInstanceKey());
+            System.out.println("Updated case with workflow instance hash: " + savedCase.getWorkflowInstanceKey());
             System.out.println("    Full Process Instance UUID: " + processInstance.getId());
             
             // Update work items with process instance ID
@@ -301,12 +299,6 @@ public class CaseWorkflowService {
         return prefix + String.format("%03d", count);
     }
     
-    private String generateAllegationId() {
-        String prefix = "ALG-" + java.time.Year.now() + "-";
-        Long count = allegationRepository.count() + 1;
-        return prefix + String.format("%03d", count);
-    }
-    
     private CaseWithAllegationsResponse convertToCaseWithAllegationsResponse(Case caseEntity, List<Allegation> allegations) {
         CaseWithAllegationsResponse response = new CaseWithAllegationsResponse();
         response.setCaseId(caseEntity.getCaseNumber());
@@ -372,17 +364,6 @@ public class CaseWorkflowService {
         response.setCaseId((String) variables.get("caseId"));
         
         return response;
-    }
-    
-    private String generateWorkItemId() {
-        String prefix = "WI-" + java.time.Year.now() + "-";
-        Long count = workItemRepository.count() + 1;
-        return prefix + String.format("%03d", count);
-    }
-    
-    private String generateWorkItemIdWithOffset(Long count) {
-        String prefix = "WI-" + java.time.Year.now() + "-";
-        return prefix + String.format("%03d", count);
     }
     
     private String classifyAllegation(String allegationType) {

@@ -18,9 +18,7 @@ public class User implements UserDetails {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer id;
-    
-    @Column(name = "user_id", unique = true, nullable = false)
+    @Column(name = "user_id")
     private Long userId;
     
     @NotBlank
@@ -127,9 +125,6 @@ public class User implements UserDetails {
     }
     
     // Getters and Setters
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
-    
     public Long getUserId() { return userId; }
     public void setUserId(Long userId) { this.userId = userId; }
     

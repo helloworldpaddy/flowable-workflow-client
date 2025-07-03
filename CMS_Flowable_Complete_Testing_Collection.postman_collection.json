@@ -1,0 +1,2306 @@
+{
+	"info": {
+		"_postman_id": "cms-flowable-auth-collection-2025",
+		"name": "CMS Flowable - Complete Testing Collection",
+		"description": "Complete testing collection for CMS Flowable Workflow Management System including Authentication, Deployment, and Workflow testing.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "cms-flowable-auth"
+	},
+	"item": [
+		{
+			"name": "1. User Authentication",
+			"item": [
+				{
+					"name": "1.1 Admin Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test response status",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test response structure",
+									"pm.test(\"Response has required fields\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('token');",
+									"    pm.expect(jsonData).to.have.property('refreshToken');",
+									"    pm.expect(jsonData).to.have.property('userDetails');",
+									"});",
+									"",
+									"// Extract and set JWT token",
+									"pm.test(\"Extract JWT token\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.token) {",
+									"        pm.environment.set('jwt_token', jsonData.token);",
+									"        pm.environment.set('refresh_token', jsonData.refreshToken);",
+									"        pm.environment.set('user_id', jsonData.userDetails.userId);",
+									"        console.log('JWT Token set:', jsonData.token.substring(0, 20) + '...');",
+									"        console.log('User ID set:', jsonData.userDetails.userId);",
+									"    }",
+									"});",
+									"",
+									"// Test admin user details",
+									"pm.test(\"Admin user details are correct\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.userDetails.username).to.eql('admin');",
+									"    pm.expect(jsonData.userDetails.email).to.eql('admin@company.com');",
+									"    pm.expect(jsonData.userDetails.firstName).to.eql('System');",
+									"    pm.expect(jsonData.userDetails.lastName).to.eql('Administrator');",
+									"});",
+									"",
+									"console.log('✅ Admin authentication successful');"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"console.log('🔐 Attempting admin login...');",
+									"console.log('Username: admin');",
+									"console.log('Base URL:', pm.environment.get('base_url'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"{{admin_username}}\",\n    \"password\": \"{{admin_password}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Authenticate admin user with full system privileges"
+					},
+					"response": []
+				},
+				{
+					"name": "1.2 HR Specialist Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"HR Specialist details are correct\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.userDetails.username).to.eql('hr.specialist');",
+									"    pm.expect(jsonData.userDetails.email).to.eql('hr.specialist@company.com');",
+									"    pm.expect(jsonData.userDetails.firstName).to.eql('Michael');",
+									"    pm.expect(jsonData.userDetails.lastName).to.eql('Chen');",
+									"});",
+									"",
+									"pm.test(\"Extract JWT token\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.token) {",
+									"        pm.environment.set('jwt_token', jsonData.token);",
+									"        pm.environment.set('user_id', jsonData.userDetails.userId);",
+									"    }",
+									"});",
+									"",
+									"console.log('✅ HR Specialist authentication successful');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"hr.specialist\",\n    \"password\": \"{{test_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login HR Specialist - Michael Chen"
+					},
+					"response": []
+				},
+				{
+					"name": "1.3 Legal Counsel Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Legal Counsel details are correct\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.userDetails.username).to.eql('legal.counsel');",
+									"    pm.expect(jsonData.userDetails.email).to.eql('legal.counsel@company.com');",
+									"    pm.expect(jsonData.userDetails.firstName).to.eql('Amanda');",
+									"    pm.expect(jsonData.userDetails.lastName).to.eql('Wilson');",
+									"});",
+									"",
+									"pm.test(\"Extract JWT token\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.token) {",
+									"        pm.environment.set('jwt_token', jsonData.token);",
+									"        pm.environment.set('user_id', jsonData.userDetails.userId);",
+									"    }",
+									"});",
+									"",
+									"console.log('✅ Legal Counsel authentication successful');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"legal.counsel\",\n    \"password\": \"{{test_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login Legal Counsel - Amanda Wilson"
+					},
+					"response": []
+				},
+				{
+					"name": "1.4 Security Analyst Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Security Analyst details are correct\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.userDetails.username).to.eql('security.analyst');",
+									"    pm.expect(jsonData.userDetails.email).to.eql('security.analyst@company.com');",
+									"    pm.expect(jsonData.userDetails.firstName).to.eql('Alex');",
+									"    pm.expect(jsonData.userDetails.lastName).to.eql('Turner');",
+									"});",
+									"",
+									"pm.test(\"Extract JWT token\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.token) {",
+									"        pm.environment.set('jwt_token', jsonData.token);",
+									"        pm.environment.set('user_id', jsonData.userDetails.userId);",
+									"    }",
+									"});",
+									"",
+									"console.log('✅ Security Analyst authentication successful');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"security.analyst\",\n    \"password\": \"{{test_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login Security Analyst - Alex Turner"
+					},
+					"response": []
+				},
+				{
+					"name": "1.5 Investigator Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Investigator details are correct\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.userDetails.username).to.eql('investigator');",
+									"    pm.expect(jsonData.userDetails.email).to.eql('investigator@company.com');",
+									"    pm.expect(jsonData.userDetails.firstName).to.eql('John');",
+									"    pm.expect(jsonData.userDetails.lastName).to.eql('Davis');",
+									"});",
+									"",
+									"pm.test(\"Extract JWT token\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.token) {",
+									"        pm.environment.set('jwt_token', jsonData.token);",
+									"        pm.environment.set('user_id', jsonData.userDetails.userId);",
+									"    }",
+									"});",
+									"",
+									"console.log('✅ Investigator authentication successful');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"investigator\",\n    \"password\": \"{{test_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login Investigator - John Davis"
+					},
+					"response": []
+				},
+				{
+					"name": "1.6 Director Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Director details are correct\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.userDetails.username).to.eql('director');",
+									"    pm.expect(jsonData.userDetails.email).to.eql('director@company.com');",
+									"    pm.expect(jsonData.userDetails.firstName).to.eql('Elizabeth');",
+									"    pm.expect(jsonData.userDetails.lastName).to.eql('Martinez');",
+									"});",
+									"",
+									"pm.test(\"Extract JWT token\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.token) {",
+									"        pm.environment.set('jwt_token', jsonData.token);",
+									"        pm.environment.set('user_id', jsonData.userDetails.userId);",
+									"    }",
+									"});",
+									"",
+									"console.log('✅ Director authentication successful');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"director\",\n    \"password\": \"{{test_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login Director - Elizabeth Martinez"
+					},
+					"response": []
+				},
+				{
+					"name": "1.7 Intake Analyst Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Intake Analyst details are correct\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.userDetails.username).to.eql('intake.analyst');",
+									"    pm.expect(jsonData.userDetails.email).to.eql('intake.analyst@company.com');",
+									"    pm.expect(jsonData.userDetails.firstName).to.eql('Sarah');",
+									"    pm.expect(jsonData.userDetails.lastName).to.eql('Johnson');",
+									"});",
+									"",
+									"pm.test(\"Extract JWT token\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.token) {",
+									"        pm.environment.set('jwt_token', jsonData.token);",
+									"        pm.environment.set('user_id', jsonData.userDetails.userId);",
+									"    }",
+									"});",
+									"",
+									"console.log('✅ Intake Analyst authentication successful');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"intake.analyst\",\n    \"password\": \"{{test_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login Intake Analyst - Sarah Johnson"
+					},
+					"response": []
+				},
+				{
+					"name": "1.8 Token Validation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Token is valid\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('valid');",
+									"    pm.expect(jsonData.valid).to.be.true;",
+									"});",
+									"",
+									"console.log('✅ Token validation successful');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/validate",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"validate"
+							]
+						},
+						"description": "Validate the JWT token from previous login"
+					},
+					"response": []
+				},
+				{
+					"name": "1.9 Logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Clear environment tokens",
+									"pm.test(\"Clear authentication tokens\", function () {",
+									"    pm.environment.unset('jwt_token');",
+									"    pm.environment.unset('refresh_token');",
+									"    pm.environment.unset('user_id');",
+									"    console.log('🔓 Authentication tokens cleared');",
+									"});",
+									"",
+									"console.log('✅ Logout successful');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/logout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"logout"
+							]
+						},
+						"description": "Logout current user and invalidate token"
+					},
+					"response": []
+				}
+			],
+			"description": "Complete user authentication workflow for all system users including Admin, HR Specialist, Legal Counsel, Security Analyst, Investigator, Director, and Intake Analyst"
+		},
+		{
+			"name": "2. Deploy",
+			"item": [
+				{
+					"name": "2.1 Deploy All Resources",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test response status",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test deployment success",
+									"pm.test(\"Deployment response structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData).to.have.property('results');",
+									"});",
+									"",
+									"// Test overall deployment success",
+									"pm.test(\"All resources deployed successfully\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"});",
+									"",
+									"// Log deployment results",
+									"pm.test(\"Log deployment details\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    console.log('Deployment Success:', jsonData.success);",
+									"    console.log('Message:', jsonData.message);",
+									"    ",
+									"    // Log results for each type",
+									"    if (jsonData.results) {",
+									"        Object.keys(jsonData.results).forEach(type => {",
+									"            console.log(`${type.toUpperCase()} Deployments:`, jsonData.results[type].length);",
+									"            jsonData.results[type].forEach(result => {",
+									"                console.log(`  - ${result.fileName}: ${result.success ? '✅ SUCCESS' : '❌ FAILED'}`);",
+									"                if (!result.success && result.errorMessage) {",
+									"                    console.log(`    Error: ${result.errorMessage}`);",
+									"                }",
+									"            });",
+									"        });",
+									"    }",
+									"});",
+									"",
+									"console.log('✅ Deploy All Resources completed');"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"console.log('🚀 Starting deployment of all Flowable resources...');",
+									"console.log('This will deploy BPMN, DMN, CMMN, and Form definitions');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/deploy/all",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"v1",
+								"deploy",
+								"all"
+							]
+						},
+						"description": "Deploy all BPMN, DMN, CMMN, and Form definitions found in configured classpath directories"
+					},
+					"response": []
+				},
+				{
+					"name": "2.2 Get Deployment Status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test response status",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test deployment status structure",
+									"pm.test(\"Deployment status response structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('object');",
+									"    // The status endpoint returns counts of deployed definitions",
+									"});",
+									"",
+									"// Log deployment status details",
+									"pm.test(\"Log deployment status\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    console.log('=== DEPLOYMENT STATUS ===');",
+									"    ",
+									"    // Log counts for each type",
+									"    Object.keys(jsonData).forEach(key => {",
+									"        if (typeof jsonData[key] === 'number') {",
+									"            console.log(`${key}: ${jsonData[key]} deployed`);",
+									"        } else if (typeof jsonData[key] === 'object') {",
+									"            console.log(`${key}:`, jsonData[key]);",
+									"        }",
+									"    });",
+									"});",
+									"",
+									"console.log('✅ Deployment status retrieved');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/deploy/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"v1",
+								"deploy",
+								"status"
+							]
+						},
+						"description": "Check the counts of currently deployed BPMN, DMN, CMMN, and Form definitions"
+					},
+					"response": []
+				}
+			],
+			"description": "Flowable resource deployment management - deploy all definitions and check deployment status"
+		},
+		{
+			"name": "3. Case Creation",
+			"item": [
+				{
+					"name": "3.1 Login as Intake Analyst",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Extract JWT token for Intake Analyst\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.token) {",
+									"        pm.environment.set('jwt_token', jsonData.token);",
+									"        pm.environment.set('user_id', jsonData.userDetails.userId);",
+									"        console.log('Intake Analyst JWT Token set');",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Intake Analyst authenticated\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.userDetails.username).to.eql('intake.analyst');",
+									"});",
+									"",
+									"console.log('✅ Intake Analyst authenticated for case creation');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"intake.analyst\",\n    \"password\": \"{{test_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						},
+						"description": "Login as Intake Analyst to create the complex case"
+					},
+					"response": []
+				},
+				{
+					"name": "3.2 Create Complex Multi-Department Case",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test response status",
+									"pm.test(\"Status code is 201\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"// Test case creation response structure",
+									"pm.test(\"Case creation response structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('caseId');",
+									"    pm.expect(jsonData).to.have.property('caseNumber');",
+									"    pm.expect(jsonData).to.have.property('title');",
+									"    pm.expect(jsonData).to.have.property('allegations');",
+									"    pm.expect(jsonData).to.have.property('workflowInstanceKey');",
+									"});",
+									"",
+									"// Extract case details for subsequent requests",
+									"pm.test(\"Extract case details\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    if (jsonData.caseId) {",
+									"        pm.environment.set('case_id', jsonData.caseId);",
+									"        pm.environment.set('case_number', jsonData.caseNumber);",
+									"        pm.environment.set('workflow_instance_key', jsonData.workflowInstanceKey);",
+									"        console.log('Case ID set:', jsonData.caseId);",
+									"        console.log('Case Number set:', jsonData.caseNumber);",
+									"        console.log('Workflow Instance Key:', jsonData.workflowInstanceKey);",
+									"    }",
+									"});",
+									"",
+									"// Test allegations count",
+									"pm.test(\"Complex case has multiple allegations\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.allegations).to.be.an('array');",
+									"    pm.expect(jsonData.allegations.length).to.be.at.least(3);",
+									"    console.log('Total allegations created:', jsonData.allegations.length);",
+									"});",
+									"",
+									"// Test allegation types for multi-department involvement",
+									"pm.test(\"Allegations involve multiple departments\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    const allegationTypes = jsonData.allegations.map(a => a.allegationType);",
+									"    console.log('Allegation Types:', allegationTypes);",
+									"    ",
+									"    // Check for HR, Legal, and CSIS involvement",
+									"    const hrTypes = ['HARASSMENT', 'DISCRIMINATION', 'RETALIATION'];",
+									"    const legalTypes = ['FINANCIAL_FRAUD', 'CORRUPTION', 'EMBEZZLEMENT'];",
+									"    const csisTypes = ['DATA_BREACH', 'SECURITY_VIOLATION', 'UNAUTHORIZED_ACCESS'];",
+									"    ",
+									"    const hasHr = allegationTypes.some(type => hrTypes.includes(type));",
+									"    const hasLegal = allegationTypes.some(type => legalTypes.includes(type));",
+									"    const hasCsis = allegationTypes.some(type => csisTypes.includes(type));",
+									"    ",
+									"    console.log('HR involvement:', hasHr);",
+									"    console.log('Legal involvement:', hasLegal);",
+									"    console.log('CSIS involvement:', hasCsis);",
+									"    ",
+									"    pm.expect(hasHr || hasLegal || hasCsis).to.be.true;",
+									"});",
+									"",
+									"// Log case creation details",
+									"pm.test(\"Log case creation details\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    console.log('=== CASE CREATION SUCCESSFUL ===');",
+									"    console.log('Case Title:', jsonData.title);",
+									"    console.log('Case Priority:', jsonData.priority);",
+									"    console.log('Case Status:', jsonData.status);",
+									"    console.log('Complainant:', jsonData.complainantName);",
+									"    console.log('Created At:', jsonData.createdAt);",
+									"    ",
+									"    jsonData.allegations.forEach((allegation, index) => {",
+									"        console.log(`Allegation ${index + 1}:`, {",
+									"            type: allegation.allegationType,",
+									"            severity: allegation.severity,",
+									"            classification: allegation.departmentClassification,",
+									"            assignedGroup: allegation.assignedGroup",
+									"        });",
+									"    });",
+									"});",
+									"",
+									"console.log('✅ Complex multi-department case created successfully');"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"console.log('🏗️ Creating complex multi-department case...');",
+									"console.log('This case will involve HR, Legal, and CSIS departments');",
+									"console.log('User:', pm.environment.get('user_id'));"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"Complex Multi-Department Investigation\",\n  \"description\": \"Comprehensive case involving workplace misconduct, financial irregularities, and security breaches requiring coordinated response from HR, Legal, and CSIS departments\",\n  \"complainantName\": \"Sarah Johnson\",\n  \"complainantEmail\": \"sarah.johnson@company.com\",\n  \"priority\": \"HIGH\",\n  \"departmentId\": 1,\n  \"caseTypeId\": 2,\n  \"allegations\": [\n    {\n      \"allegationType\": \"HARASSMENT\",\n      \"severity\": \"HIGH\",\n      \"description\": \"Workplace harassment including inappropriate verbal conduct and creation of hostile work environment\",\n      \"involvedPersons\": [\"Mike Wilson (Supervisor)\", \"Jenny Adams (Witness)\", \"Tom Smith (HR Representative)\"],\n      \"incidentDate\": \"2025-06-15\"\n    },\n    {\n      \"allegationType\": \"DISCRIMINATION\",\n      \"severity\": \"MEDIUM\",\n      \"description\": \"Gender-based discrimination in promotion decisions and salary adjustments\",\n      \"involvedPersons\": [\"Mike Wilson (Supervisor)\", \"Lisa Chen (Manager)\"],\n      \"incidentDate\": \"2025-06-10\"\n    },\n    {\n      \"allegationType\": \"RETALIATION\",\n      \"severity\": \"HIGH\",\n      \"description\": \"Retaliatory actions including schedule changes and assignment modifications after initial complaint\",\n      \"involvedPersons\": [\"Mike Wilson (Supervisor)\"],\n      \"incidentDate\": \"2025-06-20\"\n    },\n    {\n      \"allegationType\": \"FINANCIAL_FRAUD\",\n      \"severity\": \"CRITICAL\",\n      \"description\": \"Suspected falsification of expense reports and unauthorized financial transactions\",\n      \"involvedPersons\": [\"Mike Wilson (Supervisor)\", \"Finance Team\"],\n      \"incidentDate\": \"2025-06-12\"\n    },\n    {\n      \"allegationType\": \"DATA_BREACH\",\n      \"severity\": \"HIGH\",\n      \"description\": \"Unauthorized access to confidential employee records and potential data exposure\",\n      \"involvedPersons\": [\"Mike Wilson (Supervisor)\", \"IT Security Team\"],\n      \"incidentDate\": \"2025-06-18\"\n    },\n    {\n      \"allegationType\": \"SECURITY_VIOLATION\",\n      \"severity\": \"MEDIUM\",\n      \"description\": \"Violation of security protocols including unauthorized system access and credential sharing\",\n      \"involvedPersons\": [\"Mike Wilson (Supervisor)\", \"Security Personnel\"],\n      \"incidentDate\": \"2025-06-14\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/v1/cases",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"v1",
+								"cases"
+							]
+						},
+						"description": "Create a complex case with multiple allegations that will trigger HR, Legal, and CSIS department involvement based on DMN classification rules"
+					},
+					"response": []
+				},
+				{
+					"name": "3.3 Get Created Case Details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Case details retrieved\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('caseId');",
+									"    pm.expect(jsonData).to.have.property('caseNumber');",
+									"    pm.expect(jsonData.caseId).to.eql(pm.environment.get('case_id'));",
+									"});",
+									"",
+									"pm.test(\"Case has expected allegations\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.allegations).to.be.an('array');",
+									"    pm.expect(jsonData.allegations.length).to.be.at.least(3);",
+									"});",
+									"",
+									"console.log('✅ Case details retrieved successfully');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/cases/{{case_number}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"v1",
+								"cases",
+								"{{case_number}}"
+							]
+						},
+						"description": "Retrieve the details of the created case to verify all allegations and assignments"
+					},
+					"response": []
+				}
+			],
+			"description": "Complex case creation workflow involving multiple departments (HR, Legal, CSIS) with comprehensive allegations that trigger the full workflow process"
+		},
+		{
+			"name": "4. Work Items & Tasks",
+			"item": [
+				{
+					"name": "4.1 Get My Work Items - Intake",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Extract Intake task details\", function () {",
+									"    const tasks = pm.response.json();",
+									"    if (tasks && tasks.length > 0) {",
+									"        const intakeTask = tasks.find(task => task.taskName && task.taskName.includes('Intake'));",
+									"        if (intakeTask) {",
+									"            pm.environment.set('intake_task_id', intakeTask.taskId);",
+									"            pm.environment.set('task_id', intakeTask.taskId);",
+									"            console.log('Intake Task ID set:', intakeTask.taskId);",
+									"            console.log('Task Name:', intakeTask.taskName);",
+									"        }",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Log Intake tasks\", function () {",
+									"    const tasks = pm.response.json();",
+									"    console.log('=== INTAKE ANALYST TASKS ===');",
+									"    tasks.forEach((task, index) => {",
+									"        console.log(`Task ${index + 1}:`, {",
+									"            taskId: task.taskId,",
+									"            taskName: task.taskName,",
+									"            processInstanceId: task.processInstanceId,",
+									"            caseId: task.caseId",
+									"        });",
+									"    });",
+									"});",
+									"",
+									"console.log('✅ Intake work items retrieved');"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Login as intake analyst first",
+									"pm.sendRequest({",
+									"    url: pm.environment.get('base_url') + '/auth/login',",
+									"    method: 'POST',",
+									"    header: {",
+									"        'Content-Type': 'application/json'",
+									"    },",
+									"    body: {",
+									"        mode: 'raw',",
+									"        raw: JSON.stringify({",
+									"            username: 'intake.analyst',",
+									"            password: pm.environment.get('test_password')",
+									"        })",
+									"    }",
+									"}, function (err, response) {",
+									"    if (response && response.json() && response.json().token) {",
+									"        pm.environment.set('jwt_token', response.json().token);",
+									"        console.log('🔐 Intake Analyst authenticated for task retrieval');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/workflow/tasks?candidateGroup=INTAKE_ANALYST_GROUP",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"workflow",
+								"tasks"
+							],
+							"query": [
+								{
+									"key": "candidateGroup",
+									"value": "INTAKE_ANALYST_GROUP"
+								}
+							]
+						},
+						"description": "Get work items and tasks assigned to Intake Analyst group"
+					},
+					"response": []
+				},
+				{
+					"name": "4.2 Get My Work Items - HR",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Extract HR task details\", function () {",
+									"    const tasks = pm.response.json();",
+									"    if (tasks && tasks.length > 0) {",
+									"        const hrTask = tasks.find(task => task.taskName && (task.taskName.includes('HR') || task.taskName.includes('Assignment')));",
+									"        if (hrTask) {",
+									"            pm.environment.set('hr_task_id', hrTask.taskId);",
+									"            console.log('HR Task ID set:', hrTask.taskId);",
+									"        }",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Log HR tasks\", function () {",
+									"    const tasks = pm.response.json();",
+									"    console.log('=== HR SPECIALIST TASKS ===');",
+									"    tasks.forEach((task, index) => {",
+									"        console.log(`Task ${index + 1}:`, {",
+									"            taskId: task.taskId,",
+									"            taskName: task.taskName,",
+									"            processInstanceId: task.processInstanceId",
+									"        });",
+									"    });",
+									"});",
+									"",
+									"console.log('✅ HR work items retrieved');"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Login as HR specialist",
+									"pm.sendRequest({",
+									"    url: pm.environment.get('base_url') + '/auth/login',",
+									"    method: 'POST',",
+									"    header: {",
+									"        'Content-Type': 'application/json'",
+									"    },",
+									"    body: {",
+									"        mode: 'raw',",
+									"        raw: JSON.stringify({",
+									"            username: 'hr.specialist',",
+									"            password: pm.environment.get('test_password')",
+									"        })",
+									"    }",
+									"}, function (err, response) {",
+									"    if (response && response.json() && response.json().token) {",
+									"        pm.environment.set('jwt_token', response.json().token);",
+									"        console.log('🔐 HR Specialist authenticated');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/workflow/tasks?candidateGroup=HR_GROUP",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"workflow",
+								"tasks"
+							],
+							"query": [
+								{
+									"key": "candidateGroup",
+									"value": "HR_GROUP"
+								}
+							]
+						},
+						"description": "Get work items and tasks assigned to HR Group"
+					},
+					"response": []
+				},
+				{
+					"name": "4.3 Get My Work Items - Legal",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Extract Legal task details\", function () {",
+									"    const tasks = pm.response.json();",
+									"    if (tasks && tasks.length > 0) {",
+									"        const legalTask = tasks.find(task => task.taskName && task.taskName.includes('Legal'));",
+									"        if (legalTask) {",
+									"            pm.environment.set('legal_task_id', legalTask.taskId);",
+									"            console.log('Legal Task ID set:', legalTask.taskId);",
+									"        }",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Log Legal tasks\", function () {",
+									"    const tasks = pm.response.json();",
+									"    console.log('=== LEGAL COUNSEL TASKS ===');",
+									"    tasks.forEach((task, index) => {",
+									"        console.log(`Task ${index + 1}:`, {",
+									"            taskId: task.taskId,",
+									"            taskName: task.taskName,",
+									"            processInstanceId: task.processInstanceId",
+									"        });",
+									"    });",
+									"});",
+									"",
+									"console.log('✅ Legal work items retrieved');"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Login as legal counsel",
+									"pm.sendRequest({",
+									"    url: pm.environment.get('base_url') + '/auth/login',",
+									"    method: 'POST',",
+									"    header: {",
+									"        'Content-Type': 'application/json'",
+									"    },",
+									"    body: {",
+									"        mode: 'raw',",
+									"        raw: JSON.stringify({",
+									"            username: 'legal.counsel',",
+									"            password: pm.environment.get('test_password')",
+									"        })",
+									"    }",
+									"}, function (err, response) {",
+									"    if (response && response.json() && response.json().token) {",
+									"        pm.environment.set('jwt_token', response.json().token);",
+									"        console.log('🔐 Legal Counsel authenticated');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/workflow/tasks?candidateGroup=LEGAL_GROUP",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"workflow",
+								"tasks"
+							],
+							"query": [
+								{
+									"key": "candidateGroup",
+									"value": "LEGAL_GROUP"
+								}
+							]
+						},
+						"description": "Get work items and tasks assigned to Legal Group"
+					},
+					"response": []
+				},
+				{
+					"name": "4.4 Get My Work Items - Security",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Extract Security task details\", function () {",
+									"    const tasks = pm.response.json();",
+									"    if (tasks && tasks.length > 0) {",
+									"        const securityTask = tasks.find(task => task.taskName && task.taskName.includes('CSIS'));",
+									"        if (securityTask) {",
+									"            pm.environment.set('security_task_id', securityTask.taskId);",
+									"            console.log('Security Task ID set:', securityTask.taskId);",
+									"        }",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Log Security tasks\", function () {",
+									"    const tasks = pm.response.json();",
+									"    console.log('=== SECURITY ANALYST TASKS ===');",
+									"    tasks.forEach((task, index) => {",
+									"        console.log(`Task ${index + 1}:`, {",
+									"            taskId: task.taskId,",
+									"            taskName: task.taskName,",
+									"            processInstanceId: task.processInstanceId",
+									"        });",
+									"    });",
+									"});",
+									"",
+									"console.log('✅ Security work items retrieved');"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Login as security analyst",
+									"pm.sendRequest({",
+									"    url: pm.environment.get('base_url') + '/auth/login',",
+									"    method: 'POST',",
+									"    header: {",
+									"        'Content-Type': 'application/json'",
+									"    },",
+									"    body: {",
+									"        mode: 'raw',",
+									"        raw: JSON.stringify({",
+									"            username: 'security.analyst',",
+									"            password: pm.environment.get('test_password')",
+									"        })",
+									"    }",
+									"}, function (err, response) {",
+									"    if (response && response.json() && response.json().token) {",
+									"        pm.environment.set('jwt_token', response.json().token);",
+									"        console.log('🔐 Security Analyst authenticated');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/workflow/tasks?candidateGroup=CSIS_GROUP",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"workflow",
+								"tasks"
+							],
+							"query": [
+								{
+									"key": "candidateGroup",
+									"value": "CSIS_GROUP"
+								}
+							]
+						},
+						"description": "Get work items and tasks assigned to CSIS/Security Group"
+					},
+					"response": []
+				},
+				{
+					"name": "4.5 Get My Work Items - Investigator",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Extract Investigator task details\", function () {",
+									"    const tasks = pm.response.json();",
+									"    if (tasks && tasks.length > 0) {",
+									"        const investigatorTask = tasks.find(task => task.taskName && task.taskName.includes('Investigation'));",
+									"        if (investigatorTask) {",
+									"            pm.environment.set('investigator_task_id', investigatorTask.taskId);",
+									"            console.log('Investigator Task ID set:', investigatorTask.taskId);",
+									"        }",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Log Investigator tasks\", function () {",
+									"    const tasks = pm.response.json();",
+									"    console.log('=== INVESTIGATOR TASKS ===');",
+									"    tasks.forEach((task, index) => {",
+									"        console.log(`Task ${index + 1}:`, {",
+									"            taskId: task.taskId,",
+									"            taskName: task.taskName,",
+									"            processInstanceId: task.processInstanceId",
+									"        });",
+									"    });",
+									"});",
+									"",
+									"console.log('✅ Investigator work items retrieved');"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Login as investigator",
+									"pm.sendRequest({",
+									"    url: pm.environment.get('base_url') + '/auth/login',",
+									"    method: 'POST',",
+									"    header: {",
+									"        'Content-Type': 'application/json'",
+									"    },",
+									"    body: {",
+									"        mode: 'raw',",
+									"        raw: JSON.stringify({",
+									"            username: 'investigator',",
+									"            password: pm.environment.get('test_password')",
+									"        })",
+									"    }",
+									"}, function (err, response) {",
+									"    if (response && response.json() && response.json().token) {",
+									"        pm.environment.set('jwt_token', response.json().token);",
+									"        console.log('🔐 Investigator authenticated');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/workflow/tasks?candidateGroup=INVESTIGATOR_GROUP",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"workflow",
+								"tasks"
+							],
+							"query": [
+								{
+									"key": "candidateGroup",
+									"value": "INVESTIGATOR_GROUP"
+								}
+							]
+						},
+						"description": "Get work items and tasks assigned to Investigator Group"
+					},
+					"response": []
+				},
+				{
+					"name": "4.6 Get My Work Items - Director",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Extract Director task details\", function () {",
+									"    const tasks = pm.response.json();",
+									"    if (tasks && tasks.length > 0) {",
+									"        const directorTask = tasks.find(task => task.taskName && (task.taskName.includes('Close') || task.taskName.includes('Director')));",
+									"        if (directorTask) {",
+									"            pm.environment.set('director_task_id', directorTask.taskId);",
+									"            console.log('Director Task ID set:', directorTask.taskId);",
+									"        }",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Log Director tasks\", function () {",
+									"    const tasks = pm.response.json();",
+									"    console.log('=== DIRECTOR TASKS ===');",
+									"    tasks.forEach((task, index) => {",
+									"        console.log(`Task ${index + 1}:`, {",
+									"            taskId: task.taskId,",
+									"            taskName: task.taskName,",
+									"            processInstanceId: task.processInstanceId",
+									"        });",
+									"    });",
+									"});",
+									"",
+									"console.log('✅ Director work items retrieved');"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Login as director",
+									"pm.sendRequest({",
+									"    url: pm.environment.get('base_url') + '/auth/login',",
+									"    method: 'POST',",
+									"    header: {",
+									"        'Content-Type': 'application/json'",
+									"    },",
+									"    body: {",
+									"        mode: 'raw',",
+									"        raw: JSON.stringify({",
+									"            username: 'director',",
+									"            password: pm.environment.get('test_password')",
+									"        })",
+									"    }",
+									"}, function (err, response) {",
+									"    if (response && response.json() && response.json().token) {",
+									"        pm.environment.set('jwt_token', response.json().token);",
+									"        console.log('🔐 Director authenticated');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/workflow/tasks?candidateGroup=DIRECTOR_GROUP",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"workflow",
+								"tasks"
+							],
+							"query": [
+								{
+									"key": "candidateGroup",
+									"value": "DIRECTOR_GROUP"
+								}
+							]
+						},
+						"description": "Get work items and tasks assigned to Director Group"
+					},
+					"response": []
+				}
+			],
+			"description": "Retrieve work items and tasks for all user roles with automatic authentication and task ID extraction"
+		},
+		{
+			"name": "5. Task Completion Flow",
+			"item": [
+				{
+					"name": "5.1 Complete Intake Task",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Intake task completed\", function () {",
+									"    const response = pm.response.text();",
+									"    pm.expect(response).to.include('completed successfully');",
+									"});",
+									"",
+									"console.log('✅ Intake task completed successfully');"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Ensure intake analyst is authenticated",
+									"pm.sendRequest({",
+									"    url: pm.environment.get('base_url') + '/auth/login',",
+									"    method: 'POST',",
+									"    header: {",
+									"        'Content-Type': 'application/json'",
+									"    },",
+									"    body: {",
+									"        mode: 'raw',",
+									"        raw: JSON.stringify({",
+									"            username: 'intake.analyst',",
+									"            password: pm.environment.get('test_password')",
+									"        })",
+									"    }",
+									"}, function (err, response) {",
+									"    if (response && response.json() && response.json().token) {",
+									"        pm.environment.set('jwt_token', response.json().token);",
+									"        console.log('🔐 Intake Analyst authenticated for task completion');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"decision\": \"APPROVE\",\n  \"comments\": \"Intake review completed. Case properly classified and ready for departmental processing.\",\n  \"intakeDecision\": \"PROCEED\",\n  \"nextStep\": \"CLASSIFICATION\",\n  \"reviewNotes\": \"All allegations have been properly documented and classified. Multi-department coordination required.\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/workflow/tasks/{{intake_task_id}}/complete",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"workflow",
+								"tasks",
+								"{{intake_task_id}}",
+								"complete"
+							]
+						},
+						"description": "Complete the intake task with approval decision and move to classification"
+					},
+					"response": []
+				},
+				{
+					"name": "5.2 Complete HR Investigation Task",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"HR investigation task completed\", function () {",
+									"    const response = pm.response.text();",
+									"    pm.expect(response).to.include('completed successfully');",
+									"});",
+									"",
+									"console.log('✅ HR investigation task completed successfully');"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Authenticate as HR specialist",
+									"pm.sendRequest({",
+									"    url: pm.environment.get('base_url') + '/auth/login',",
+									"    method: 'POST',",
+									"    header: {",
+									"        'Content-Type': 'application/json'",
+									"    },",
+									"    body: {",
+									"        mode: 'raw',",
+									"        raw: JSON.stringify({",
+									"            username: 'hr.specialist',",
+									"            password: pm.environment.get('test_password')",
+									"        })",
+									"    }",
+									"}, function (err, response) {",
+									"    if (response && response.json() && response.json().token) {",
+									"        pm.environment.set('jwt_token', response.json().token);",
+									"        console.log('🔐 HR Specialist authenticated for task completion');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"decision\": \"APPROVE\",\n  \"comments\": \"HR investigation completed. Found evidence of workplace harassment, discrimination, and retaliation. Recommend disciplinary action and policy review.\",\n  \"hrFindings\": \"SUBSTANTIATED\",\n  \"disciplinaryAction\": \"RECOMMENDED\",\n  \"policyViolation\": \"CONFIRMED\",\n  \"nextDepartment\": \"INVESTIGATION\",\n  \"recommendedActions\": [\"Disciplinary hearing\", \"Management training\", \"Policy clarification\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/workflow/tasks/{{hr_task_id}}/complete",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"workflow",
+								"tasks",
+								"{{hr_task_id}}",
+								"complete"
+							]
+						},
+						"description": "Complete HR investigation with findings and recommendations"
+					},
+					"response": []
+				},
+				{
+					"name": "5.3 Complete Legal Investigation Task",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Legal investigation task completed\", function () {",
+									"    const response = pm.response.text();",
+									"    pm.expect(response).to.include('completed successfully');",
+									"});",
+									"",
+									"console.log('✅ Legal investigation task completed successfully');"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Authenticate as legal counsel",
+									"pm.sendRequest({",
+									"    url: pm.environment.get('base_url') + '/auth/login',",
+									"    method: 'POST',",
+									"    header: {",
+									"        'Content-Type': 'application/json'",
+									"    },",
+									"    body: {",
+									"        mode: 'raw',",
+									"        raw: JSON.stringify({",
+									"            username: 'legal.counsel',",
+									"            password: pm.environment.get('test_password')",
+									"        })",
+									"    }",
+									"}, function (err, response) {",
+									"    if (response && response.json() && response.json().token) {",
+									"        pm.environment.set('jwt_token', response.json().token);",
+									"        console.log('🔐 Legal Counsel authenticated for task completion');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"decision\": \"APPROVE\",\n  \"comments\": \"Legal investigation completed. Financial fraud allegations substantiated. Criminal activity suspected - recommend law enforcement referral.\",\n  \"legalFindings\": \"CRIMINAL_ACTIVITY_SUSPECTED\",\n  \"financialLoss\": \"CONFIRMED\",\n  \"lawEnforcementReferral\": \"RECOMMENDED\",\n  \"legalRisk\": \"HIGH\",\n  \"complianceIssues\": [\"Financial controls\", \"Audit procedures\", \"Segregation of duties\"],\n  \"nextStep\": \"INVESTIGATION\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/workflow/tasks/{{legal_task_id}}/complete",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"workflow",
+								"tasks",
+								"{{legal_task_id}}",
+								"complete"
+							]
+						},
+						"description": "Complete Legal investigation with findings and law enforcement recommendations"
+					},
+					"response": []
+				},
+				{
+					"name": "5.4 Complete Security Investigation Task",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Security investigation task completed\", function () {",
+									"    const response = pm.response.text();",
+									"    pm.expect(response).to.include('completed successfully');",
+									"});",
+									"",
+									"console.log('✅ Security investigation task completed successfully');"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Authenticate as security analyst",
+									"pm.sendRequest({",
+									"    url: pm.environment.get('base_url') + '/auth/login',",
+									"    method: 'POST',",
+									"    header: {",
+									"        'Content-Type': 'application/json'",
+									"    },",
+									"    body: {",
+									"        mode: 'raw',",
+									"        raw: JSON.stringify({",
+									"            username: 'security.analyst',",
+									"            password: pm.environment.get('test_password')",
+									"        })",
+									"    }",
+									"}, function (err, response) {",
+									"    if (response && response.json() && response.json().token) {",
+									"        pm.environment.set('jwt_token', response.json().token);",
+									"        console.log('🔐 Security Analyst authenticated for task completion');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"decision\": \"APPROVE\",\n  \"comments\": \"CSIS investigation completed. Data breach confirmed with unauthorized access to confidential records. Security protocols violated. Immediate remediation required.\",\n  \"securityFindings\": \"BREACH_CONFIRMED\",\n  \"dataCompromised\": \"PERSONAL_RECORDS\",\n  \"accessMethod\": \"CREDENTIAL_ABUSE\",\n  \"securityRisk\": \"CRITICAL\",\n  \"remediationActions\": [\"Password reset\", \"Access revocation\", \"System hardening\", \"Monitoring enhancement\"],\n  \"breachNotification\": \"REQUIRED\",\n  \"nextStep\": \"INVESTIGATION\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/workflow/tasks/{{security_task_id}}/complete",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"workflow",
+								"tasks",
+								"{{security_task_id}}",
+								"complete"
+							]
+						},
+						"description": "Complete Security/CSIS investigation with breach findings and remediation"
+					},
+					"response": []
+				}
+			],
+			"description": "Complete department-specific investigation tasks with detailed findings and recommendations"
+		},
+		{
+			"name": "6. Investigation Completion & Case Closure",
+			"item": [
+				{
+					"name": "6.1 Complete Investigation Process",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Investigation process completed\", function () {",
+									"    const response = pm.response.text();",
+									"    pm.expect(response).to.include('completed successfully');",
+									"});",
+									"",
+									"console.log('✅ Investigation process completed successfully');"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Authenticate as investigator",
+									"pm.sendRequest({",
+									"    url: pm.environment.get('base_url') + '/auth/login',",
+									"    method: 'POST',",
+									"    header: {",
+									"        'Content-Type': 'application/json'",
+									"    },",
+									"    body: {",
+									"        mode: 'raw',",
+									"        raw: JSON.stringify({",
+									"            username: 'investigator',",
+									"            password: pm.environment.get('test_password')",
+									"        })",
+									"    }",
+									"}, function (err, response) {",
+									"    if (response && response.json() && response.json().token) {",
+									"        pm.environment.set('jwt_token', response.json().token);",
+									"        console.log('🔐 Investigator authenticated for process completion');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"decision\": \"COMPLETE\",\n  \"comments\": \"Comprehensive investigation completed. All departmental findings consolidated. Evidence collected and documented. Ready for case closure review.\",\n  \"investigationStatus\": \"COMPLETED\",\n  \"evidenceCollected\": \"COMPREHENSIVE\",\n  \"findingsSummary\": {\n    \"hrFindings\": \"Harassment, discrimination, and retaliation substantiated\",\n    \"legalFindings\": \"Financial fraud confirmed, criminal activity suspected\",\n    \"securityFindings\": \"Data breach confirmed, security protocols violated\"\n  },\n  \"overallRecommendation\": \"IMMEDIATE_ACTION_REQUIRED\",\n  \"disciplinaryAction\": \"TERMINATION_RECOMMENDED\",\n  \"lawEnforcementReferral\": \"REQUIRED\",\n  \"systemRemediation\": \"CRITICAL\",\n  \"nextStep\": \"CASE_CLOSURE\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/workflow/tasks/{{investigator_task_id}}/complete",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"workflow",
+								"tasks",
+								"{{investigator_task_id}}",
+								"complete"
+							]
+						},
+						"description": "Complete the investigation process with consolidated findings from all departments"
+					},
+					"response": []
+				},
+				{
+					"name": "6.2 Close Case - Ethics Office",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Case closure completed\", function () {",
+									"    const response = pm.response.text();",
+									"    pm.expect(response).to.include('completed successfully');",
+									"});",
+									"",
+									"// Log case closure completion",
+									"pm.test(\"Log case closure\", function () {",
+									"    console.log('=== CASE CLOSURE COMPLETED ===');",
+									"    console.log('Case Number:', pm.environment.get('case_number'));",
+									"    console.log('Final Status: CLOSED');",
+									"    console.log('Closure Authority: Ethics Office Director');",
+									"    console.log('All workflow tasks completed successfully');",
+									"});",
+									"",
+									"console.log('✅ Case officially closed by Ethics Office Director');"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Authenticate as director",
+									"pm.sendRequest({",
+									"    url: pm.environment.get('base_url') + '/auth/login',",
+									"    method: 'POST',",
+									"    header: {",
+									"        'Content-Type': 'application/json'",
+									"    },",
+									"    body: {",
+									"        mode: 'raw',",
+									"        raw: JSON.stringify({",
+									"            username: 'director',",
+									"            password: pm.environment.get('test_password')",
+									"        })",
+									"    }",
+									"}, function (err, response) {",
+									"    if (response && response.json() && response.json().token) {",
+									"        pm.environment.set('jwt_token', response.json().token);",
+									"        console.log('🔐 Ethics Office Director authenticated for case closure');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"decision\": \"CLOSE_CASE\",\n  \"comments\": \"Case officially closed by Ethics Office. All investigations completed. Disciplinary actions implemented. Law enforcement referral submitted. System remediation in progress.\",\n  \"closureReason\": \"INVESTIGATION_COMPLETED\",\n  \"finalOutcome\": \"SUBSTANTIATED_VIOLATIONS\",\n  \"disciplinaryActions\": {\n    \"employeeTermination\": \"COMPLETED\",\n    \"managementTraining\": \"SCHEDULED\",\n    \"policyUpdate\": \"IN_PROGRESS\"\n  },\n  \"externalReferrals\": {\n    \"lawEnforcement\": \"SUBMITTED\",\n    \"regulatoryBodies\": \"NOTIFIED\"\n  },\n  \"remediationStatus\": {\n    \"securityUpgrades\": \"IN_PROGRESS\",\n    \"financialControls\": \"ENHANCED\",\n    \"hrPolicies\": \"UPDATED\"\n  },\n  \"lessonsLearned\": [\"Enhanced background checks\", \"Improved financial oversight\", \"Strengthened IT security\"],\n  \"caseStatus\": \"CLOSED\",\n  \"closureDate\": \"2025-07-03\",\n  \"ethicsOfficerSignoff\": \"APPROVED\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/workflow/tasks/{{director_task_id}}/complete",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"workflow",
+								"tasks",
+								"{{director_task_id}}",
+								"complete"
+							]
+						},
+						"description": "Official case closure by Ethics Office Director with comprehensive outcomes and remediation status"
+					},
+					"response": []
+				},
+				{
+					"name": "6.3 Verify Workflow Completion",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Verify workflow completion\", function () {",
+									"    const processInstance = pm.response.json();",
+									"    if (processInstance === null) {",
+									"        console.log('✅ Workflow completed - Process instance ended successfully');",
+									"        pm.test.skip('Process completed and removed');",
+									"    } else {",
+									"        console.log('Process still active:', processInstance.id);",
+									"        pm.expect(processInstance).to.have.property('id');",
+									"    }",
+									"});",
+									"",
+									"console.log('✅ Workflow completion verification complete');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/workflow/process/{{process_instance_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"workflow",
+								"process",
+								"{{process_instance_id}}"
+							]
+						},
+						"description": "Verify that the workflow process has completed and ended properly"
+					},
+					"response": []
+				}
+			],
+			"description": "Complete the investigation process and officially close the case through Ethics Office Director approval"
+		},
+		{
+			"name": "System Health Checks",
+			"item": [
+				{
+					"name": "Application Health",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Application is UP\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.status).to.eql('UP');",
+									"});",
+									"",
+									"console.log('✅ Application health check passed');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/actuator/health",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"actuator",
+								"health"
+							]
+						},
+						"description": "Check application health status"
+					},
+					"response": []
+				},
+				{
+					"name": "Application Info",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"console.log('✅ Application info retrieved');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/actuator/info",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"actuator",
+								"info"
+							]
+						},
+						"description": "Get application information and metadata"
+					},
+					"response": []
+				}
+			],
+			"description": "System health and monitoring endpoints"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"console.log('🏢 CMS Flowable Complete Testing Collection');",
+					"console.log('Environment:', pm.environment.name);",
+					"console.log('Base URL:', pm.environment.get('base_url'));",
+					"",
+					"// Ensure environment variables are set",
+					"if (!pm.environment.get('admin_username')) {",
+					"    pm.environment.set('admin_username', 'admin');",
+					"}",
+					"if (!pm.environment.get('admin_password')) {",
+					"    pm.environment.set('admin_password', 'password123');",
+					"}",
+					"if (!pm.environment.get('test_password')) {",
+					"    pm.environment.set('test_password', 'password123');",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"pm.test(\"Response time is reasonable\", function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+					"});"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "collection_name",
+			"value": "CMS Flowable Complete Testing Collection",
+			"type": "string"
+		},
+		{
+			"key": "collection_version",
+			"value": "1.0.0",
+			"type": "string"
+		}
+	]
+}
