@@ -14,7 +14,7 @@ public class WorkItemService {
     private JdbcTemplate jdbcTemplate;
 
     /**
-     * Generates a new work item ID in format WI-YYYY-XXX
+     * Generates a new work item ID in format
      * @return Generated work item ID
      */
     public String generateWorkItemId() {
@@ -47,8 +47,6 @@ public class WorkItemService {
             "WHERE work_item_id LIKE 'WI-" + currentYear + "-%'",
             Long.class
         );
-        
-        // Format as WI-YYYY-XXX
         return String.format("WI-%d-%03d", currentYear, count);
     }
 

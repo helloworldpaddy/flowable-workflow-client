@@ -6,9 +6,6 @@ import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.Year;
-import java.util.concurrent.atomic.AtomicInteger;
-
 @Entity
 @Table(name = "work_items",  schema = "cms_flowable_workflow")
 public class WorkItem {
@@ -76,7 +73,6 @@ public class WorkItem {
         }
         if (workItemId == null) {
             // This will be set by the service layer using database sequence
-            // Format: WI-YYYY-XXX (e.g., WI-2025-001)
         }
     }
     
