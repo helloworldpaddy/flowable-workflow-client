@@ -76,16 +76,49 @@
             <artifactId>flowable-spring-boot-starter-cmmn</artifactId>
             <version>${flowable.version}</version>
         </dependency>
+        <!-- DMN dependencies with KIE/Drools support -->
         <dependency>
             <groupId>org.flowable</groupId>
             <artifactId>flowable-spring-boot-starter-dmn</artifactId>
             <version>${flowable.version}</version>
         </dependency>
-		<dependency>
-		    <groupId>org.flowable</groupId>
-		    <artifactId>flowable-dmn-spring-configurator</artifactId>
-		    <version>${flowable.version}</version>
-		</dependency>
+        <dependency>
+            <groupId>org.flowable</groupId>
+            <artifactId>flowable-dmn-spring-configurator</artifactId>
+            <version>${flowable.version}</version>
+        </dependency>
+        
+        <!-- KIE/Drools dependencies required for DMN engine -->
+        <dependency>
+            <groupId>org.kie</groupId>
+            <artifactId>kie-api</artifactId>
+            <version>8.44.0.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>org.kie</groupId>
+            <artifactId>kie-internal</artifactId>
+            <version>8.44.0.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>org.drools</groupId>
+            <artifactId>drools-core</artifactId>
+            <version>8.44.0.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>org.drools</groupId>
+            <artifactId>drools-compiler</artifactId>
+            <version>8.44.0.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>org.drools</groupId>
+            <artifactId>drools-mvel</artifactId>
+            <version>8.44.0.Final</version>
+        </dependency>
+        <dependency>
+            <groupId>org.drools</groupId>
+            <artifactId>drools-ruleunits-engine</artifactId>
+            <version>8.44.0.Final</version>
+        </dependency>
 
         <!-- Database Driver -->
 

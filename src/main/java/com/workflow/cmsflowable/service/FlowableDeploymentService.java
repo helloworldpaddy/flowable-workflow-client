@@ -35,7 +35,7 @@ public class FlowableDeploymentService {
 
     /*@Autowired
     private CmmnRepositoryService cmmnRepositoryService;*/
-    @Autowired
+    @Autowired(required = false)
     private DmnRepositoryService dmnRepositoryService;
     /*@Autowired
     private FormRepositoryService formRepositoryService;*/
@@ -60,22 +60,41 @@ public class FlowableDeploymentService {
      * @return A map containing lists of deployment results for each resource type.
      */
     public Map<String, List<DeploymentResult>> deployAllFlowableResources() {
+        logger.info("Starting deployment of all Flowable resources...");
         Map<String, List<DeploymentResult>> allResults = new HashMap<>();
 
-        allResults.put("bpmn", deployResources(bpmnPath, new String[]{"**/*.bpmn20.xml", "**/*.bpmn"}, "BPMN Process"));
-        allResults.put("dmn", deployResources(dmnPath, new String[]{"**/*.dmn"}, "DMN Decision"));
-        allResults.put("cmmn", deployResources(cmmnPath, new String[]{"**/*.cmmn", "**/*.cmmn.xml"}, "CMMN Case"));
-        allResults.put("forms", deployResources(formPath, new String[]{"**/*.form"}, "Flowable Form"));
+        try {
+            // Check if services are available
+            if (repositoryService == null) {
+                logger.error("RepositoryService is not available!");
+                throw new IllegalStateException("RepositoryService is not injected");
+            }
+            
+            logger.info("Deploying BPMN resources from: {}{}", basePath, bpmnPath);
+            allResults.put("bpmn", deployResources(bpmnPath, new String[]{"**/*.bpmn20.xml", "**/*.bpmn"}, "BPMN Process"));
+            
+            if (dmnRepositoryService != null) {
+                logger.info("Deploying DMN resources from: {}{}", basePath, dmnPath);
+                allResults.put("dmn", deployDmnResources(dmnPath, new String[]{"**/*.dmn"}, "DMN Decision"));
+            } else {
+                logger.warn("DMN Repository Service not available, skipping DMN deployment");
+                allResults.put("dmn", new ArrayList<>());
+            }
+            
+            // Skip CMMN and Forms as they are disabled
+            allResults.put("cmmn", new ArrayList<>());
+            allResults.put("forms", new ArrayList<>());
 
-        return allResults;
+            logger.info("Completed deployment of all Flowable resources");
+            return allResults;
+        } catch (Exception e) {
+            logger.error("Failed to deploy Flowable resources", e);
+            throw new RuntimeException("Deployment failed: " + e.getMessage(), e);
+        }
     }
 
     /**
-     * Deploys resources of a specific type from a given directory.
-     * @param directory The base directory within the classpath (e.g., "processes/").
-     * @param extensions An array of file extensions to search for (e.g., ".bpmn20.xml").
-     * @param category The category name for the deployment (e.g., "BPMN Process").
-     * @return A list of DeploymentResult objects indicating success or failure for each resource.
+     * Deploys BPMN resources using RepositoryService.
      */
     private List<DeploymentResult> deployResources(String directory, String[] extensions, String category) {
         List<DeploymentResult> results = new ArrayList<>();
@@ -83,13 +102,16 @@ public class FlowableDeploymentService {
 
         for (String ext : extensions) {
             String locationPattern = basePath + directory + ext;
+            logger.debug("Scanning for {} files at pattern: {}", category, locationPattern);
             try {
                 Resource[] resources = resolver.getResources(locationPattern);
+                logger.info("Found {} {} files in {}", resources.length, category, locationPattern);
                 if (resources.length == 0) {
                     logger.info("No {} files found in {}", category, locationPattern);
                 }
                 for (Resource resource : resources) {
-                    results.add(deploySingleResource(resource, category));
+                    logger.debug("Processing resource: {}", resource.getFilename());
+                    results.add(deploySingleBpmnResource(resource, category));
                 }
             } catch (IOException e) {
                 logger.error("Error scanning resources at pattern {}: {}", locationPattern, e.getMessage(), e);
@@ -100,79 +122,140 @@ public class FlowableDeploymentService {
     }
 
     /**
-     * Deploys a single Flowable resource.
-     * @param resource The Spring Resource object representing the file.
-     * @param category The category for the Flowable deployment.
-     * @return A DeploymentResult object for the specific resource.
+     * Deploys DMN resources using DmnRepositoryService.
      */
-    private DeploymentResult deploySingleResource(Resource resource, String category) {
+    private List<DeploymentResult> deployDmnResources(String directory, String[] extensions, String category) {
+        List<DeploymentResult> results = new ArrayList<>();
+        PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+
+        for (String ext : extensions) {
+            String locationPattern = basePath + directory + ext;
+            logger.debug("Scanning for {} files at pattern: {}", category, locationPattern);
+            try {
+                Resource[] resources = resolver.getResources(locationPattern);
+                logger.info("Found {} {} files in {}", resources.length, category, locationPattern);
+                if (resources.length == 0) {
+                    logger.info("No {} files found in {}", category, locationPattern);
+                }
+                for (Resource resource : resources) {
+                    logger.debug("Processing DMN resource: {}", resource.getFilename());
+                    results.add(deploySingleDmnResource(resource, category));
+                }
+            } catch (IOException e) {
+                logger.error("Error scanning resources at pattern {}: {}", locationPattern, e.getMessage(), e);
+                results.add(new DeploymentResult(locationPattern, category, e));
+            }
+        }
+        return results;
+    }
+
+    /**
+     * Deploys a single BPMN resource using RepositoryService.
+     */
+    private DeploymentResult deploySingleBpmnResource(Resource resource, String category) {
         String resourceName = resource.getFilename();
         if (resourceName == null) {
             return new DeploymentResult("Unknown Resource", category, new IllegalArgumentException("Resource has no filename"));
         }
 
         try (InputStream inputStream = resource.getInputStream()) {
-            // Flowable deployment name often includes timestamp/auto-generated, this is just descriptive
             String deploymentName = String.format("Auto-deployment - %s - %s", resourceName, category);
+            logger.debug("Creating BPMN deployment: {}", deploymentName);
 
             Deployment deployment = repositoryService.createDeployment()
                 .name(deploymentName)
-                .category(category) // Use a category for better organization
+                .category(category)
                 .addInputStream(resourceName, inputStream)
                 .deploy();
 
-            String definitionKey = extractDefinitionKey(resourceName, deployment.getId());
+            String definitionKey = extractBpmnDefinitionKey(resourceName, deployment.getId());
 
-            logger.info("Successfully deployed {} (ID: {}) from {}. Definition Key: {}",
+            logger.info("Successfully deployed BPMN {} (ID: {}) from {}. Definition Key: {}",
                     resourceName, deployment.getId(), resource.getDescription(), definitionKey);
 
             return new DeploymentResult(resourceName, category, deployment.getId(), definitionKey);
 
         } catch (org.flowable.common.engine.api.FlowableException e) {
-            logger.error("Flowable engine error deploying {}: {}", resourceName, e.getMessage(), e);
+            logger.error("Flowable engine error deploying BPMN {}: {}", resourceName, e.getMessage(), e);
             return new DeploymentResult(resourceName, category, e);
         } catch (IOException e) {
-            logger.error("IO error reading resource {}: {}", resourceName, e.getMessage(), e);
+            logger.error("IO error reading BPMN resource {}: {}", resourceName, e.getMessage(), e);
             return new DeploymentResult(resourceName, category, e);
         } catch (Exception e) {
-            logger.error("Unexpected error deploying {}: {}", resourceName, e.getMessage(), e);
+            logger.error("Unexpected error deploying BPMN {}: {}", resourceName, e.getMessage(), e);
             return new DeploymentResult(resourceName, category, e);
         }
     }
 
     /**
-     * Attempts to extract the primary definition key from the deployed resource.
-     * This is a heuristic and might not cover all cases or multiple definitions within one file.
-     * For multiple definitions, you'd query the specific definition services.
+     * Deploys a single DMN resource using DmnRepositoryService.
      */
-    private String extractDefinitionKey(String resourceName, String deploymentId) {
+    private DeploymentResult deploySingleDmnResource(Resource resource, String category) {
+        String resourceName = resource.getFilename();
+        if (resourceName == null) {
+            return new DeploymentResult("Unknown Resource", category, new IllegalArgumentException("Resource has no filename"));
+        }
+
+        try (InputStream inputStream = resource.getInputStream()) {
+            String deploymentName = String.format("Auto-deployment - %s - %s", resourceName, category);
+            logger.debug("Creating DMN deployment: {}", deploymentName);
+
+            org.flowable.dmn.api.DmnDeployment deployment = dmnRepositoryService.createDeployment()
+                .name(deploymentName)
+                .category(category)
+                .addInputStream(resourceName, inputStream)
+                .deploy();
+
+            String definitionKey = extractDmnDefinitionKey(resourceName, deployment.getId());
+
+            logger.info("Successfully deployed DMN {} (ID: {}) from {}. Definition Key: {}",
+                    resourceName, deployment.getId(), resource.getDescription(), definitionKey);
+
+            return new DeploymentResult(resourceName, category, deployment.getId(), definitionKey);
+
+        } catch (org.flowable.common.engine.api.FlowableException e) {
+            logger.error("Flowable engine error deploying DMN {}: {}", resourceName, e.getMessage(), e);
+            return new DeploymentResult(resourceName, category, e);
+        } catch (IOException e) {
+            logger.error("IO error reading DMN resource {}: {}", resourceName, e.getMessage(), e);
+            return new DeploymentResult(resourceName, category, e);
+        } catch (Exception e) {
+            logger.error("Unexpected error deploying DMN {}: {}", resourceName, e.getMessage(), e);
+            return new DeploymentResult(resourceName, category, e);
+        }
+    }
+
+    /**
+     * Extract BPMN process definition keys from deployment.
+     */
+    private String extractBpmnDefinitionKey(String resourceName, String deploymentId) {
         try {
-            if (resourceName.endsWith(".bpmn20.xml") || resourceName.endsWith(".bpmn")) {
-                Set<String> processDefinitionKeys = repositoryService.createProcessDefinitionQuery()
-                    .deploymentId(deploymentId)
-                    .list().stream().map(pd -> pd.getKey()).collect(Collectors.toSet());
-                return processDefinitionKeys.isEmpty() ? null : String.join(", ", processDefinitionKeys);
-            } else if (resourceName.endsWith(".dmn")) {
+            Set<String> processDefinitionKeys = repositoryService.createProcessDefinitionQuery()
+                .deploymentId(deploymentId)
+                .list().stream().map(pd -> pd.getKey()).collect(Collectors.toSet());
+            return processDefinitionKeys.isEmpty() ? null : String.join(", ", processDefinitionKeys);
+        } catch (Exception e) {
+            logger.warn("Could not extract BPMN definition key for resource {}: {}", resourceName, e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Extract DMN decision definition keys from deployment.
+     */
+    private String extractDmnDefinitionKey(String resourceName, String deploymentId) {
+        try {
+            if (dmnRepositoryService != null) {
                 Set<String> decisionDefinitionKeys = dmnRepositoryService.createDecisionQuery()
                     .deploymentId(deploymentId)
                     .list().stream().map(dd -> dd.getKey()).collect(Collectors.toSet());
                 return decisionDefinitionKeys.isEmpty() ? null : String.join(", ", decisionDefinitionKeys);
-            } /*else if (resourceName.endsWith(".cmmn") || resourceName.endsWith(".cmmn.xml")) {
-                Set<String> caseDefinitionKeys = cmmnRepositoryService.createCaseDefinitionQuery()
-                    .deploymentId(deploymentId)
-                    .list().stream().map(cd -> cd.getKey()).collect(Collectors.toSet());
-                return caseDefinitionKeys.isEmpty() ? null : String.join(", ", caseDefinitionKeys);
-            } else if (resourceName.endsWith(".form")) {
-                 Set<String> formDefinitionKeys = formRepositoryService.createFormDefinitionQuery()
-                    .deploymentId(deploymentId)
-                    .list().stream().map(fd -> fd.getKey()).collect(Collectors.toSet());
-                return formDefinitionKeys.isEmpty() ? null : String.join(", ", formDefinitionKeys);
-            }*/
+            }
+            return null;
         } catch (Exception e) {
-            logger.warn("Could not extract definition key for resource {}: {}", resourceName, e.getMessage());
+            logger.warn("Could not extract DMN definition key for resource {}: {}", resourceName, e.getMessage());
             return null;
         }
-        return null;
     }
 
     /**
@@ -182,18 +265,25 @@ public class FlowableDeploymentService {
     public Map<String, Object> getDeploymentStatus() {
         Map<String, Object> status = new HashMap<>();
 
-        long bpmnCount = repositoryService.createProcessDefinitionQuery().count();
-        long dmnCount = dmnRepositoryService.createDecisionQuery().count();
-        /*long cmmnCount = cmmnRepositoryService.createCaseDefinitionQuery().count();
-        long formCount = formRepositoryService.createFormDefinitionQuery().count();*/
+        try {
+            long bpmnCount = repositoryService != null ? repositoryService.createProcessDefinitionQuery().count() : 0;
+            long dmnCount = dmnRepositoryService != null ? dmnRepositoryService.createDecisionQuery().count() : 0;
 
-        status.put("success", true);
-        status.put("message", "Current deployed definition counts.");
-        status.put("bpmnProcessDefinitions", bpmnCount);
-        status.put("dmnDecisionDefinitions", dmnCount);
-        /*status.put("cmmnCaseDefinitions", cmmnCount);
-        status.put("formDefinitions", formCount);*/
-        status.put("totalDefinitions", bpmnCount + dmnCount);
+            status.put("success", true);
+            status.put("message", "Current deployed definition counts.");
+            status.put("bpmnProcessDefinitions", bpmnCount);
+            status.put("dmnDecisionDefinitions", dmnCount);
+            status.put("cmmnCaseDefinitions", 0L); // Disabled
+            status.put("formDefinitions", 0L); // Disabled
+            status.put("totalDefinitions", bpmnCount + dmnCount);
+
+            logger.info("Deployment status: BPMN={}, DMN={}, Total={}", bpmnCount, dmnCount, bpmnCount + dmnCount);
+        } catch (Exception e) {
+            logger.error("Error getting deployment status", e);
+            status.put("success", false);
+            status.put("message", "Error retrieving deployment status: " + e.getMessage());
+            status.put("error", e.getClass().getSimpleName());
+        }
 
         return status;
     }

@@ -293,6 +293,40 @@ public class CaseWorkflowService {
             .collect(Collectors.toList());
     }
     
+    public CaseWithAllegationsResponse getCaseDetailsByCaseNumber(String caseNumber) {
+        Case caseEntity = caseRepository.findByCaseNumber(caseNumber)
+            .orElseThrow(() -> new RuntimeException("Case not found: " + caseNumber));
+        
+        List<Allegation> allegations = allegationRepository.findByCaseId(caseNumber);
+        
+        return convertToCaseWithAllegationsResponse(caseEntity, allegations);
+    }
+    
+    public List<CaseWithAllegationsResponse> getAllCases(int page, int size, String status) {
+        // For now, return all cases (pagination can be added later with PageRequest)
+        List<Case> cases = caseRepository.findAll();
+        
+        // Filter by status if provided
+        if (status != null && !status.trim().isEmpty()) {
+            try {
+                CaseStatus caseStatus = CaseStatus.valueOf(status.toUpperCase());
+                cases = cases.stream()
+                    .filter(c -> c.getStatus() == caseStatus)
+                    .collect(Collectors.toList());
+            } catch (IllegalArgumentException e) {
+                // Invalid status, return empty list or all cases
+                System.out.println("Invalid status filter: " + status);
+            }
+        }
+        
+        return cases.stream()
+            .map(caseEntity -> {
+                List<Allegation> allegations = allegationRepository.findByCaseId(caseEntity.getCaseNumber());
+                return convertToCaseWithAllegationsResponse(caseEntity, allegations);
+            })
+            .collect(Collectors.toList());
+    }
+    
     private String generateCaseNumber() {
         String prefix = "CMS-" + java.time.Year.now() + "-";
         Long count = caseRepository.count() + 1;

@@ -11,7 +11,7 @@
                   exporterVersion="7.0.0.M1">
 
   <!-- Main CMS Process -->
-  <bpmn:process id="Process_CMS_Workflow" name="CMS Workflow Process" isExecutable="true">
+  <bpmn:process id="Process_CMS_Workflow" name="CMS Workflow Process Updated" isExecutable="true">
 
     <bpmn:startEvent id="StartEvent_CaseCreated" name="Case Created">
       <bpmn:outgoing>Flow_to_Intake</bpmn:outgoing>
@@ -29,14 +29,7 @@
       <bpmn:outgoing>Flow_to_Classification</bpmn:outgoing>
     </bpmn:userTask>
 
-    <bpmn:businessRuleTask id="Task_Classification" name="Classify Allegations">
-      <bpmn:extensionElements>
-        <!-- Replaced zeebe:calledDecision with flowable:decisionRef and flowable:decisionResultVariable -->
-        <flowable:decisionRef>allegation-classification</flowable:decisionRef>
-        <flowable:decisionResultVariable>classification</flowable:decisionResultVariable>
-        <!-- Optional: if your DMN returns a list of results, and you want the result variable to be a collection -->
-        <flowable:mapDecisionResult>collectEntries</flowable:mapDecisionResult>
-      </bpmn:extensionElements>
+    <bpmn:businessRuleTask id="Task_Classification" name="Classify Allegations" flowable:decisionTableReferenceKey="CMS_Classification_Decision">
       <bpmn:incoming>Flow_to_Classification</bpmn:incoming>
       <bpmn:outgoing>Flow_to_Gateway</bpmn:outgoing>
     </bpmn:businessRuleTask>
@@ -171,7 +164,7 @@
     </bpmn:sequenceFlow>
 
     <bpmn:sequenceFlow id="Flow_to_MultiInstance" name="Multi-Department Cases" sourceRef="Gateway_Classification" targetRef="SubProcess_DepartmentProcessing">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${classification != null &amp;&amp; classification.size() > 1}</bpmn:conditionExpression>
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${classification != null &amp;&amp; classification.size() > 1 &amp;&amp; classification.stream().map(c -> c.get("classification")).distinct().count() > 1}</bpmn:conditionExpression>
     </bpmn:sequenceFlow>
 
     <bpmn:sequenceFlow id="Flow_to_WorkItem" sourceRef="Task_CreateWorkItem" targetRef="Task_Investigation" />

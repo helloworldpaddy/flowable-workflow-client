@@ -600,9 +600,13 @@
 									"        Object.keys(jsonData.results).forEach(type => {",
 									"            console.log(`${type.toUpperCase()} Deployments:`, jsonData.results[type].length);",
 									"            jsonData.results[type].forEach(result => {",
-									"                console.log(`  - ${result.fileName}: ${result.success ? '✅ SUCCESS' : '❌ FAILED'}`);",
-									"                if (!result.success && result.errorMessage) {",
-									"                    console.log(`    Error: ${result.errorMessage}`);",
+									"                console.log(`  - ${result.resourceName}: ${result.success ? '✅ SUCCESS' : '❌ FAILED'}`);",
+									"                if (result.success && result.deploymentId) {",
+									"                    console.log(`    ✓ Deployment ID: ${result.deploymentId}`);",
+									"                    console.log(`    ✓ Definition Key: ${result.definitionKey}`);",
+									"                }",
+									"                if (!result.success && result.error) {",
+									"                    console.log(`    ❌ Error: ${result.message}`);",
 									"                }",
 									"            });",
 									"        });",
@@ -668,22 +672,30 @@
 									"pm.test(\"Deployment status response structure\", function () {",
 									"    const jsonData = pm.response.json();",
 									"    pm.expect(jsonData).to.be.an('object');",
-									"    // The status endpoint returns counts of deployed definitions",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"    pm.expect(jsonData).to.have.property('message');",
+									"    pm.expect(jsonData).to.have.property('bpmnProcessDefinitions');",
+									"    pm.expect(jsonData).to.have.property('dmnDecisionDefinitions');",
+									"    pm.expect(jsonData).to.have.property('totalDefinitions');",
+									"});",
+									"",
+									"// Test deployment success",
+									"pm.test(\"Deployment status success\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.success).to.be.true;",
 									"});",
 									"",
 									"// Log deployment status details",
 									"pm.test(\"Log deployment status\", function () {",
 									"    const jsonData = pm.response.json();",
 									"    console.log('=== DEPLOYMENT STATUS ===');",
-									"    ",
-									"    // Log counts for each type",
-									"    Object.keys(jsonData).forEach(key => {",
-									"        if (typeof jsonData[key] === 'number') {",
-									"            console.log(`${key}: ${jsonData[key]} deployed`);",
-									"        } else if (typeof jsonData[key] === 'object') {",
-									"            console.log(`${key}:`, jsonData[key]);",
-									"        }",
-									"    });",
+									"    console.log(`✅ Success: ${jsonData.success}`);",
+									"    console.log(`📝 Message: ${jsonData.message}`);",
+									"    console.log(`🔄 BPMN Process Definitions: ${jsonData.bpmnProcessDefinitions}`);",
+									"    console.log(`⚖️  DMN Decision Definitions: ${jsonData.dmnDecisionDefinitions}`);",
+									"    console.log(`📋 CMMN Case Definitions: ${jsonData.cmmnCaseDefinitions}`);",
+									"    console.log(`📄 Form Definitions: ${jsonData.formDefinitions}`);",
+									"    console.log(`📊 Total Definitions: ${jsonData.totalDefinitions}`);",
 									"});",
 									"",
 									"console.log('✅ Deployment status retrieved');"
@@ -716,6 +728,61 @@
 							]
 						},
 						"description": "Check the counts of currently deployed BPMN, DMN, CMMN, and Form definitions"
+					},
+					"response": []
+				},
+				{
+					"name": "2.3 Verify BPMN Process Deployment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test response status",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test that we have our updated process",
+									"pm.test(\"CMS Workflow Process is deployed\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"    const cmsProcess = jsonData.find(p => p.key === 'Process_CMS_Workflow');",
+									"    pm.expect(cmsProcess).to.not.be.undefined;",
+									"    console.log('✅ Found CMS Workflow Process:', cmsProcess.name);",
+									"    console.log('  - Version:', cmsProcess.version);",
+									"    console.log('  - Deployment ID:', cmsProcess.deploymentId);",
+									"});",
+									"",
+									"console.log('✅ BPMN process deployment verified');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/repository/process-definitions",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"repository",
+								"process-definitions"
+							]
+						},
+						"description": "Verify that the CMS Workflow process is properly deployed and accessible"
 					},
 					"response": []
 				}
@@ -982,6 +1049,157 @@
 				}
 			],
 			"description": "Complex case creation workflow involving multiple departments (HR, Legal, CSIS) with comprehensive allegations that trigger the full workflow process"
+		},
+		{
+			"name": "3.5 Test Classification Service & Workflow Progress",
+			"item": [
+				{
+					"name": "3.5.1 Get Workflow Status",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test response status",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test workflow status structure",
+									"pm.test(\"Workflow status response structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('object');",
+									"    pm.expect(jsonData).to.have.property('status');",
+									"});",
+									"",
+									"// Log workflow progress",
+									"pm.test(\"Log workflow progress\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    console.log('=== WORKFLOW STATUS ===');",
+									"    console.log('Status:', jsonData.status);",
+									"    if (jsonData.processInstanceId) {",
+									"        console.log('Process Instance ID:', jsonData.processInstanceId);",
+									"    }",
+									"    if (jsonData.variables) {",
+									"        console.log('=== CLASSIFICATION RESULTS ===');",
+									"        if (jsonData.variables.classification) {",
+									"            console.log('Classification:', jsonData.variables.classification);",
+									"            jsonData.variables.classification.forEach((c, index) => {",
+									"                console.log(`  Allegation ${index + 1}:`, {",
+									"                    type: c.allegationType,",
+									"                    severity: c.severity,",
+									"                    classification: c.classification",
+									"                });",
+									"            });",
+									"        }",
+									"    }",
+									"});",
+									"",
+									"console.log('✅ Workflow status and classification verified');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/cases/{{case_number}}/workflow-status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"v1",
+								"cases",
+								"{{case_number}}",
+								"workflow-status"
+							]
+						},
+						"description": "Check workflow status and verify that ClassificationService has properly classified allegations"
+					},
+					"response": []
+				},
+				{
+					"name": "3.5.2 Get Workflow Journey",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test response status",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Test journey structure",
+									"pm.test(\"Journey response structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('caseNumber');",
+									"    pm.expect(jsonData).to.have.property('stages');",
+									"});",
+									"",
+									"// Log workflow journey",
+									"pm.test(\"Log workflow journey\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    console.log('=== WORKFLOW JOURNEY ===');",
+									"    console.log('Case Number:', jsonData.caseNumber);",
+									"    if (jsonData.stages) {",
+									"        jsonData.stages.forEach((stage, index) => {",
+									"            const statusIcon = stage.status === 'completed' ? '✅' : stage.status === 'in_progress' ? '🔄' : '⏳';",
+									"            console.log(`${statusIcon} ${stage.stage}: ${stage.status}`);",
+									"            if (stage.timestamp) {",
+									"                console.log(`    Timestamp: ${stage.timestamp}`);",
+									"            }",
+									"        });",
+									"    }",
+									"});",
+									"",
+									"console.log('✅ Workflow journey retrieved');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							},
+							{
+								"key": "Accept",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/v1/cases/{{case_number}}/journey",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"v1",
+								"cases",
+								"{{case_number}}",
+								"journey"
+							]
+						},
+						"description": "Get the complete workflow journey to verify classification and routing is working"
+					},
+					"response": []
+				}
+			],
+			"description": "Test the new ClassificationService and verify that the workflow is progressing correctly with proper allegation classification"
 		},
 		{
 			"name": "4. Work Items & Tasks",
