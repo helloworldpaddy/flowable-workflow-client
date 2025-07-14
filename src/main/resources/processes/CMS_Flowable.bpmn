@@ -1,180 +1,180 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
-                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
-                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
-                  xmlns:flowable="http://flowable.org/bpmn"
-                  xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
-                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                  id="Definitions_CMS_Process"
-                  targetNamespace="http://bpmn.io/schema/bpmn"
-                  exporter="Flowable"
-                  exporterVersion="7.0.0.M1">
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+             xmlns:flowable="http://flowable.org/bpmn"
+             xmlns:di="http://www.omg.org/spec/DD/20100524/DI"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             id="Definitions_CMS_Process"
+             targetNamespace="http://www.flowable.org/processdef"
+             exporter="Flowable"
+             exporterVersion="7.0.0.M1">
 
   <!-- Main CMS Process -->
-  <bpmn:process id="Process_CMS_Workflow" name="CMS Workflow Process Updated" isExecutable="true">
+  <process id="Process_CMS_Workflow" name="CMS Workflow Process Updated" isExecutable="true">
 
-    <bpmn:startEvent id="StartEvent_CaseCreated" name="Case Created">
-      <bpmn:outgoing>Flow_to_Intake</bpmn:outgoing>
-    </bpmn:startEvent>
+    <startEvent id="StartEvent_CaseCreated" name="Case Created">
+      <outgoing>Flow_to_Intake</outgoing>
+    </startEvent>
 
-    <bpmn:userTask id="Task_EO_Intake" name="EO Intake - Intake Process">
-      <bpmn:extensionElements>
+    <userTask id="Task_EO_Intake" name="EO Intake - Intake Process">
+      <extensionElements>
         <!-- Replaced zeebe:assignmentDefinition with flowable:candidateGroups -->
         <flowable:candidateGroups>INTAKE_ANALYST_GROUP</flowable:candidateGroups>
         <!-- Replaced zeebe:formDefinition with flowable:formKey -->
         <flowable:formKey>eoIntakeForm</flowable:formKey>
         <!-- Removed zeebe:userTask as it's not needed for Flowable -->
-      </bpmn:extensionElements>
-      <bpmn:incoming>Flow_to_Intake</bpmn:incoming>
-      <bpmn:outgoing>Flow_to_Classification</bpmn:outgoing>
-    </bpmn:userTask>
+      </extensionElements>
+      <incoming>Flow_to_Intake</incoming>
+      <outgoing>Flow_to_Classification</outgoing>
+    </userTask>
 
-    <bpmn:businessRuleTask id="Task_Classification" name="Classify Allegations" flowable:decisionTableReferenceKey="CMS_Classification_Decision">
-      <bpmn:incoming>Flow_to_Classification</bpmn:incoming>
-      <bpmn:outgoing>Flow_to_Gateway</bpmn:outgoing>
-    </bpmn:businessRuleTask>
+    <businessRuleTask id="Task_Classification" name="Classify Allegations" flowable:decisionTableReferenceKey="CMS_Classification_Decision">
+      <incoming>Flow_to_Classification</incoming>
+      <outgoing>Flow_to_Gateway</outgoing>
+    </businessRuleTask>
 
-    <bpmn:exclusiveGateway id="Gateway_Classification" name="Route by Classification">
-      <bpmn:incoming>Flow_to_Gateway</bpmn:incoming>
-      <bpmn:outgoing>Flow_to_HR</bpmn:outgoing>
-      <bpmn:outgoing>Flow_to_Legal</bpmn:outgoing>
-      <bpmn:outgoing>Flow_to_CSIS</bpmn:outgoing>
-      <bpmn:outgoing>Flow_to_MultiInstance</bpmn:outgoing>
-    </bpmn:exclusiveGateway>
+    <exclusiveGateway id="Gateway_Classification" name="Route by Classification">
+      <incoming>Flow_to_Gateway</incoming>
+      <outgoing>Flow_to_HR</outgoing>
+      <outgoing>Flow_to_Legal</outgoing>
+      <outgoing>Flow_to_CSIS</outgoing>
+      <outgoing>Flow_to_MultiInstance</outgoing>
+    </exclusiveGateway>
 
     <!-- Department Assignment Subprocess -->
-    <bpmn:subProcess id="SubProcess_DepartmentProcessing" name="Department Processing">
-      <bpmn:incoming>Flow_to_MultiInstance</bpmn:incoming>
-      <bpmn:outgoing>Flow_to_Investigation</bpmn:outgoing>
+    <subProcess id="SubProcess_DepartmentProcessing" name="Department Processing">
+      <incoming>Flow_to_MultiInstance</incoming>
+      <outgoing>Flow_to_Investigation</outgoing>
 
-      <bpmn:startEvent id="StartEvent_DeptProcessing" name="Start Department Processing">
-        <bpmn:outgoing>Flow_Dept_to_Tasks</bpmn:outgoing>
-      </bpmn:startEvent>
+      <startEvent id="StartEvent_DeptProcessing" name="Start Department Processing">
+        <outgoing>Flow_Dept_to_Tasks</outgoing>
+      </startEvent>
 
-      <bpmn:parallelGateway id="Gateway_Converge" name="Converge Assignments">
-        <bpmn:incoming>Flow_Dept_to_Tasks</bpmn:incoming>
-        <bpmn:outgoing>Flow_HR_to_Converge</bpmn:outgoing>
-        <bpmn:outgoing>Flow_Legal_to_Converge</bpmn:outgoing>
-        <bpmn:outgoing>Flow_CSIS_to_Converge</bpmn:outgoing>
-      </bpmn:parallelGateway>
+      <parallelGateway id="Gateway_Converge" name="Converge Assignments">
+        <incoming>Flow_Dept_to_Tasks</incoming>
+        <outgoing>Flow_HR_to_Converge</outgoing>
+        <outgoing>Flow_Legal_to_Converge</outgoing>
+        <outgoing>Flow_CSIS_to_Converge</outgoing>
+      </parallelGateway>
 
-      <bpmn:userTask id="Task_HR_Assignment" name="EO Assignment - HR">
-        <bpmn:extensionElements>
+      <userTask id="Task_HR_Assignment" name="EO Assignment - HR">
+        <extensionElements>
           <flowable:candidateGroups>HR_GROUP</flowable:candidateGroups>
           <flowable:formKey>hrAssignmentForm</flowable:formKey>
-        </bpmn:extensionElements>
-        <bpmn:incoming>Flow_HR_to_Converge</bpmn:incoming>
-        <bpmn:outgoing>Flow_HR_Complete</bpmn:outgoing>
-      </bpmn:userTask>
+        </extensionElements>
+        <incoming>Flow_HR_to_Converge</incoming>
+        <outgoing>Flow_HR_Complete</outgoing>
+      </userTask>
 
-      <bpmn:userTask id="Task_Legal_Assignment" name="EO Assignment - Legal">
-        <bpmn:extensionElements>
+      <userTask id="Task_Legal_Assignment" name="EO Assignment - Legal">
+        <extensionElements>
           <flowable:candidateGroups>LEGAL_GROUP</flowable:candidateGroups>
           <flowable:formKey>legalAssignmentForm</flowable:formKey>
-        </bpmn:extensionElements>
-        <bpmn:incoming>Flow_Legal_to_Converge</bpmn:incoming>
-        <bpmn:outgoing>Flow_Legal_Complete</bpmn:outgoing>
-      </bpmn:userTask>
+        </extensionElements>
+        <incoming>Flow_Legal_to_Converge</incoming>
+        <outgoing>Flow_Legal_Complete</outgoing>
+      </userTask>
 
-      <bpmn:userTask id="Task_CSIS_Assignment" name="EO Assignment - CSIS">
-        <bpmn:extensionElements>
+      <userTask id="Task_CSIS_Assignment" name="EO Assignment - CSIS">
+        <extensionElements>
           <flowable:candidateGroups>CSIS_GROUP</flowable:candidateGroups>
           <flowable:formKey>csisAssignmentForm</flowable:formKey>
-        </bpmn:extensionElements>
-        <bpmn:incoming>Flow_CSIS_to_Converge</bpmn:incoming>
-        <bpmn:outgoing>Flow_CSIS_Complete</bpmn:outgoing>
-      </bpmn:userTask>
+        </extensionElements>
+        <incoming>Flow_CSIS_to_Converge</incoming>
+        <outgoing>Flow_CSIS_Complete</outgoing>
+      </userTask>
 
-      <bpmn:parallelGateway id="Gateway_Join" name="Join Results">
-        <bpmn:incoming>Flow_HR_Complete</bpmn:incoming>
-        <bpmn:incoming>Flow_Legal_Complete</bpmn:incoming>
-        <bpmn:incoming>Flow_CSIS_Complete</bpmn:incoming>
-        <bpmn:outgoing>Flow_to_EndDept</bpmn:outgoing>
-      </bpmn:parallelGateway>
+      <parallelGateway id="Gateway_Join" name="Join Results">
+        <incoming>Flow_HR_Complete</incoming>
+        <incoming>Flow_Legal_Complete</incoming>
+        <incoming>Flow_CSIS_Complete</incoming>
+        <outgoing>Flow_to_EndDept</outgoing>
+      </parallelGateway>
 
-      <bpmn:endEvent id="EndEvent_DeptProcessing" name="Department Processing Complete">
-        <bpmn:incoming>Flow_to_EndDept</bpmn:incoming>
-      </bpmn:endEvent>
+      <endEvent id="EndEvent_DeptProcessing" name="Department Processing Complete">
+        <incoming>Flow_to_EndDept</incoming>
+      </endEvent>
 
       <!-- Subprocess flows -->
-      <bpmn:sequenceFlow id="Flow_Dept_to_Tasks" sourceRef="StartEvent_DeptProcessing" targetRef="Gateway_Converge" />
-      <bpmn:sequenceFlow id="Flow_HR_to_Converge" sourceRef="Gateway_Converge" targetRef="Task_HR_Assignment" />
-      <bpmn:sequenceFlow id="Flow_Legal_to_Converge" sourceRef="Gateway_Converge" targetRef="Task_Legal_Assignment" />
-      <bpmn:sequenceFlow id="Flow_CSIS_to_Converge" sourceRef="Gateway_Converge" targetRef="Task_CSIS_Assignment" />
-      <bpmn:sequenceFlow id="Flow_HR_Complete" sourceRef="Task_HR_Assignment" targetRef="Gateway_Join" />
-      <bpmn:sequenceFlow id="Flow_Legal_Complete" sourceRef="Task_Legal_Assignment" targetRef="Gateway_Join" />
-      <bpmn:sequenceFlow id="Flow_CSIS_Complete" sourceRef="Task_CSIS_Assignment" targetRef="Gateway_Join" />
-      <bpmn:sequenceFlow id="Flow_to_EndDept" sourceRef="Gateway_Join" targetRef="EndEvent_DeptProcessing" />
-    </bpmn:subProcess>
+      <sequenceFlow id="Flow_Dept_to_Tasks" sourceRef="StartEvent_DeptProcessing" targetRef="Gateway_Converge" />
+      <sequenceFlow id="Flow_HR_to_Converge" sourceRef="Gateway_Converge" targetRef="Task_HR_Assignment" />
+      <sequenceFlow id="Flow_Legal_to_Converge" sourceRef="Gateway_Converge" targetRef="Task_Legal_Assignment" />
+      <sequenceFlow id="Flow_CSIS_to_Converge" sourceRef="Gateway_Converge" targetRef="Task_CSIS_Assignment" />
+      <sequenceFlow id="Flow_HR_Complete" sourceRef="Task_HR_Assignment" targetRef="Gateway_Join" />
+      <sequenceFlow id="Flow_Legal_Complete" sourceRef="Task_Legal_Assignment" targetRef="Gateway_Join" />
+      <sequenceFlow id="Flow_CSIS_Complete" sourceRef="Task_CSIS_Assignment" targetRef="Gateway_Join" />
+      <sequenceFlow id="Flow_to_EndDept" sourceRef="Gateway_Join" targetRef="EndEvent_DeptProcessing" />
+    </subProcess>
 
     <!-- Direct department tasks (for single department cases) -->
-    <bpmn:userTask id="Task_CreateWorkItem" name="Create Work Item">
-      <bpmn:extensionElements>
+    <userTask id="Task_CreateWorkItem" name="Create Work Item">
+      <extensionElements>
         <flowable:candidateGroups>WORK_ITEM_GROUP</flowable:candidateGroups>
         <flowable:formKey>workItemForm</flowable:formKey>
-      </bpmn:extensionElements>
-      <bpmn:incoming>Flow_to_HR</bpmn:incoming>
-      <bpmn:incoming>Flow_to_Legal</bpmn:incoming>
-      <bpmn:incoming>Flow_to_CSIS</bpmn:incoming>
-      <bpmn:outgoing>Flow_to_WorkItem</bpmn:outgoing>
-    </bpmn:userTask>
+      </extensionElements>
+      <incoming>Flow_to_HR</incoming>
+      <incoming>Flow_to_Legal</incoming>
+      <incoming>Flow_to_CSIS</incoming>
+      <outgoing>Flow_to_WorkItem</outgoing>
+    </userTask>
 
     <!-- Investigation Task -->
-    <bpmn:userTask id="Task_Investigation" name="Investigation Process">
-      <bpmn:extensionElements>
+    <userTask id="Task_Investigation" name="Investigation Process">
+      <extensionElements>
         <flowable:candidateGroups>INVESTIGATOR_GROUP</flowable:candidateGroups>
         <flowable:formKey>investigationForm</flowable:formKey>
-      </bpmn:extensionElements>
-      <bpmn:incoming>Flow_to_Investigation</bpmn:incoming>
-      <bpmn:incoming>Flow_to_WorkItem</bpmn:incoming>
-      <bpmn:outgoing>Flow_to_Closure</bpmn:outgoing>
-    </bpmn:userTask>
+      </extensionElements>
+      <incoming>Flow_to_Investigation</incoming>
+      <incoming>Flow_to_WorkItem</incoming>
+      <outgoing>Flow_to_Closure</outgoing>
+    </userTask>
 
     <!-- Case Closure -->
-    <bpmn:userTask id="Task_Case_Closure" name="Close Case - Ethics Office">
-      <bpmn:extensionElements>
+    <userTask id="Task_Case_Closure" name="Close Case - Ethics Office">
+      <extensionElements>
         <flowable:candidateGroups>DIRECTOR_GROUP</flowable:candidateGroups>
         <flowable:formKey>closeCaseForm</flowable:formKey>
-      </bpmn:extensionElements>
-      <bpmn:incoming>Flow_to_Closure</bpmn:incoming>
-      <bpmn:outgoing>Flow_to_End</bpmn:outgoing>
-    </bpmn:userTask>
+      </extensionElements>
+      <incoming>Flow_to_Closure</incoming>
+      <outgoing>Flow_to_End</outgoing>
+    </userTask>
 
-    <bpmn:endEvent id="EndEvent_CaseClosed" name="Case Closed">
-      <bpmn:incoming>Flow_to_End</bpmn:incoming>
-    </bpmn:endEvent>
+    <endEvent id="EndEvent_CaseClosed" name="Case Closed">
+      <incoming>Flow_to_End</incoming>
+    </endEvent>
 
     <!-- Main Process Sequence Flows -->
-    <bpmn:sequenceFlow id="Flow_to_Intake" sourceRef="StartEvent_CaseCreated" targetRef="Task_EO_Intake" />
-    <bpmn:sequenceFlow id="Flow_to_Classification" sourceRef="Task_EO_Intake" targetRef="Task_Classification" />
-    <bpmn:sequenceFlow id="Flow_to_Gateway" sourceRef="Task_Classification" targetRef="Gateway_Classification" />
+    <sequenceFlow id="Flow_to_Intake" sourceRef="StartEvent_CaseCreated" targetRef="Task_EO_Intake" />
+    <sequenceFlow id="Flow_to_Classification" sourceRef="Task_EO_Intake" targetRef="Task_Classification" />
+    <sequenceFlow id="Flow_to_Gateway" sourceRef="Task_Classification" targetRef="Gateway_Classification" />
 
     <!-- Condition Expressions - Converted from FEEL to JUEL -->
     <!-- Assuming 'classification' is a List of Maps, where each map has a 'classification' key -->
-    <bpmn:sequenceFlow id="Flow_to_HR" name="HR Cases" sourceRef="Gateway_Classification" targetRef="Task_CreateWorkItem">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${classification != null &amp;&amp; classification.size() == 1 &amp;&amp; classification.get(0).get("classification") == "HR"}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
+    <sequenceFlow id="Flow_to_HR" name="HR Cases" sourceRef="Gateway_Classification" targetRef="Task_CreateWorkItem">
+      <conditionExpression xsi:type="tFormalExpression">${classification != null &amp;&amp; classification.size() == 1 &amp;&amp; classification.get(0).get("classification") == "HR"}</conditionExpression>
+    </sequenceFlow>
 
-    <bpmn:sequenceFlow id="Flow_to_Legal" name="Legal Cases" sourceRef="Gateway_Classification" targetRef="Task_CreateWorkItem">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${classification != null &amp;&amp; classification.size() == 1 &amp;&amp; classification.get(0).get("classification") == "LEGAL"}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
+    <sequenceFlow id="Flow_to_Legal" name="Legal Cases" sourceRef="Gateway_Classification" targetRef="Task_CreateWorkItem">
+      <conditionExpression xsi:type="tFormalExpression">${classification != null &amp;&amp; classification.size() == 1 &amp;&amp; classification.get(0).get("classification") == "LEGAL"}</conditionExpression>
+    </sequenceFlow>
 
-    <bpmn:sequenceFlow id="Flow_to_CSIS" name="CSIS Cases" sourceRef="Gateway_Classification" targetRef="Task_CreateWorkItem">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${classification != null &amp;&amp; classification.size() == 1 &amp;&amp; classification.get(0).get("classification") == "CSIS"}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
+    <sequenceFlow id="Flow_to_CSIS" name="CSIS Cases" sourceRef="Gateway_Classification" targetRef="Task_CreateWorkItem">
+      <conditionExpression xsi:type="tFormalExpression">${classification != null &amp;&amp; classification.size() == 1 &amp;&amp; classification.get(0).get("classification") == "CSIS"}</conditionExpression>
+    </sequenceFlow>
 
-    <bpmn:sequenceFlow id="Flow_to_MultiInstance" name="Multi-Department Cases" sourceRef="Gateway_Classification" targetRef="SubProcess_DepartmentProcessing">
-      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">${classification != null &amp;&amp; classification.size() > 1 &amp;&amp; classification.stream().map(c -> c.get("classification")).distinct().count() > 1}</bpmn:conditionExpression>
-    </bpmn:sequenceFlow>
+    <sequenceFlow id="Flow_to_MultiInstance" name="Multi-Department Cases" sourceRef="Gateway_Classification" targetRef="SubProcess_DepartmentProcessing">
+      <conditionExpression xsi:type="tFormalExpression">${classification != null &amp;&amp; classification.size() > 1 &amp;&amp; classification.stream().map(c -> c.get("classification")).distinct().count() > 1}</conditionExpression>
+    </sequenceFlow>
 
-    <bpmn:sequenceFlow id="Flow_to_WorkItem" sourceRef="Task_CreateWorkItem" targetRef="Task_Investigation" />
-    <bpmn:sequenceFlow id="Flow_to_Investigation" sourceRef="SubProcess_DepartmentProcessing" targetRef="Task_Investigation" />
-    <bpmn:sequenceFlow id="Flow_to_Closure" sourceRef="Task_Investigation" targetRef="Task_Case_Closure" />
-    <bpmn:sequenceFlow id="Flow_to_End" sourceRef="Task_Case_Closure" targetRef="EndEvent_CaseClosed" />
+    <sequenceFlow id="Flow_to_WorkItem" sourceRef="Task_CreateWorkItem" targetRef="Task_Investigation" />
+    <sequenceFlow id="Flow_to_Investigation" sourceRef="SubProcess_DepartmentProcessing" targetRef="Task_Investigation" />
+    <sequenceFlow id="Flow_to_Closure" sourceRef="Task_Investigation" targetRef="Task_Case_Closure" />
+    <sequenceFlow id="Flow_to_End" sourceRef="Task_Case_Closure" targetRef="EndEvent_CaseClosed" />
 
-  </bpmn:process>
+  </process>
 
-  <!-- BPMN Diagram Interchange (BPMNDI) - No changes needed here -->
+  <!-- BPMN Diagram Interchange (BPMNDI) -->
   <bpmndi:BPMNDiagram id="BPMNDiagram_CMS_Process">
     <bpmndi:BPMNPlane id="BPMNPlane_CMS_Process" bpmnElement="Process_CMS_Workflow">
 
@@ -409,4 +409,4 @@
     </bpmndi:BPMNPlane>
   </bpmndi:BPMNDiagram>
 
-</bpmn:definitions>
+</definitions>
