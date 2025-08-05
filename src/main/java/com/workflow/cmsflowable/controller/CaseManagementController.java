@@ -10,6 +10,8 @@ import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.flowable.engine.RuntimeService;
 import org.flowable.engine.runtime.ProcessInstance;
@@ -34,8 +36,46 @@ public class CaseManagementController {
         return ResponseEntity.ok("Case management controller is working!");
     }
     
+    @GetMapping("/auth-test")
+    @Operation(summary = "Test authentication", description = "Test endpoint to verify authentication is working")
+    public ResponseEntity<Map<String, Object>> testAuth(Authentication authentication) {
+        Map<String, Object> response = new HashMap<>();
+        
+        if (authentication == null) {
+            response.put("authenticated", false);
+            response.put("message", "No authentication found");
+            return ResponseEntity.status(401).body(response);
+        }
+        
+        response.put("authenticated", true);
+        response.put("username", authentication.getName());
+        response.put("authorities", authentication.getAuthorities().stream()
+            .map(auth -> auth.getAuthority())
+            .collect(java.util.stream.Collectors.toList()));
+        response.put("principal", authentication.getPrincipal().getClass().getSimpleName());
+        
+        // Add detailed role analysis
+        List<String> roles = authentication.getAuthorities().stream()
+            .map(auth -> auth.getAuthority())
+            .collect(java.util.stream.Collectors.toList());
+            
+        response.put("hasDirectorGroup", roles.contains("DIRECTOR_GROUP"));
+        response.put("hasManagerGroup", roles.contains("MANAGER_GROUP"));
+        response.put("hasAnalystGroup", roles.contains("ANALYST_GROUP"));
+        response.put("hasIntakeAnalyst", roles.contains("INTAKE_ANALYST") || roles.contains("INTAKE_ANALYST_GROUP"));
+        
+        // Check what roles would allow access to /v1/cases
+        boolean canAccessCases = roles.contains("DIRECTOR_GROUP") || 
+                               roles.contains("MANAGER_GROUP") || 
+                               roles.contains("ANALYST_GROUP");
+        response.put("canAccessCases", canAccessCases);
+        
+        return ResponseEntity.ok(response);
+    }
+    
     @PostMapping
     @Operation(summary = "Create a new case", description = "Create a new case with allegations and start the workflow process")
+    @PreAuthorize("hasPermission(#request, 'case', 'create')")
     public ResponseEntity<CaseWithAllegationsResponse> createCase(@Valid @RequestBody CreateCaseWithAllegationsRequest request) {
         System.out.println("🎯 Received case creation request for: " + request.getTitle());
         CaseWithAllegationsResponse response = caseWorkflowService.createCaseWithWorkflow(request);
@@ -44,6 +84,7 @@ public class CaseManagementController {
     
     @PostMapping("/multi-department")
     @Operation(summary = "Create a multi-department case", description = "Create a complex case that requires multiple departments (HR, Legal, CSIS)")
+    @PreAuthorize("hasPermission(#request, 'case', 'create')")
     public ResponseEntity<CaseWithAllegationsResponse> createMultiDepartmentCase(@Valid @RequestBody CreateCaseWithAllegationsRequest request) {
         System.out.println("🎯 Creating multi-department case: " + request.getTitle());
         
@@ -58,6 +99,7 @@ public class CaseManagementController {
     
     @GetMapping("/{caseNumber}")
     @Operation(summary = "Get case details", description = "Retrieve detailed information about a specific case")
+    @PreAuthorize("hasPermission(#caseNumber, 'case', 'view')")
     public ResponseEntity<CaseWithAllegationsResponse> getCaseDetails(
             @Parameter(description = "Case number (e.g., CMS-2025-010)") @PathVariable String caseNumber) {
         try {
@@ -70,6 +112,7 @@ public class CaseManagementController {
     
     @GetMapping
     @Operation(summary = "Get all cases", description = "Retrieve a list of all cases in the system")
+    @PreAuthorize("hasAnyRole('DIRECTOR_GROUP', 'MANAGER_GROUP', 'ANALYST_GROUP')")
     public ResponseEntity<List<CaseWithAllegationsResponse>> getAllCases(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -82,8 +125,94 @@ public class CaseManagementController {
         }
     }
     
+    @GetMapping("/my-cases")
+    @Operation(summary = "Get my cases", description = "Get cases accessible to the current user for dashboard")
+    public ResponseEntity<List<CaseWithAllegationsResponse>> getMyCases(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String status,
+            Authentication authentication) {
+        try {
+            if (authentication == null) {
+                return ResponseEntity.status(401).build();
+            }
+            
+            // For now, return all cases - you can add user-specific filtering later
+            List<CaseWithAllegationsResponse> cases = caseWorkflowService.getAllCases(page, size, status);
+            return ResponseEntity.ok(cases);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+    
+    @GetMapping("/dashboard-cases")
+    @Operation(summary = "Get cases for dashboard", description = "Get cases for dashboard without strict authorization")
+    public ResponseEntity<List<CaseWithAllegationsResponse>> getDashboardCases(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String status,
+            Authentication authentication) {
+        try {
+            if (authentication == null) {
+                return ResponseEntity.status(401).build();
+            }
+            
+            // Log user details for debugging
+            System.out.println("🔍 Dashboard cases request from user: " + authentication.getName());
+            System.out.println("🔍 User authorities: " + authentication.getAuthorities());
+            
+            // Return cases without strict authorization for dashboard
+            List<CaseWithAllegationsResponse> cases = caseWorkflowService.getAllCases(page, size, status);
+            System.out.println("✅ Returning " + cases.size() + " cases for dashboard");
+            return ResponseEntity.ok(cases);
+        } catch (Exception e) {
+            System.err.println("❌ Error fetching dashboard cases: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+    
+    @GetMapping("/dashboard-stats")
+    @Operation(summary = "Get dashboard statistics", description = "Get basic statistics for dashboard")
+    public ResponseEntity<Map<String, Object>> getDashboardStats(Authentication authentication) {
+        try {
+            if (authentication == null) {
+                return ResponseEntity.status(401).build();
+            }
+            
+            System.out.println("🔍 Dashboard stats request from user: " + authentication.getName());
+            
+            // Get basic stats without strict authorization
+            List<CaseWithAllegationsResponse> allCases = caseWorkflowService.getAllCases(0, 1000, null);
+            
+            long openCases = allCases.stream()
+                .filter(c -> "OPEN".equals(c.getStatus().toString()) || "IN_PROGRESS".equals(c.getStatus().toString()))
+                .count();
+                
+            long investigations = allCases.stream()
+                .filter(c -> "IN_PROGRESS".equals(c.getStatus().toString()) || 
+                           "HIGH".equals(c.getPriority().toString()) || 
+                           "CRITICAL".equals(c.getPriority().toString()))
+                .count();
+            
+            Map<String, Object> stats = new HashMap<>();
+            stats.put("allOpenCases", openCases);
+            stats.put("openInvestigations", investigations);
+            stats.put("totalCases", allCases.size());
+            
+            System.out.println("✅ Dashboard stats - Open: " + openCases + ", Investigations: " + investigations);
+            
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            System.err.println("❌ Error fetching dashboard stats: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+    
     @GetMapping("/{caseNumber}/workflow-status")
     @Operation(summary = "Get workflow status", description = "Get the current workflow status and progress for a case")
+    @PreAuthorize("hasPermission(#caseNumber, 'case', 'view')")
     public ResponseEntity<Map<String, Object>> getWorkflowStatus(
             @Parameter(description = "Case number") @PathVariable String caseNumber) {
         try {
@@ -130,6 +259,7 @@ public class CaseManagementController {
     
     @GetMapping("/{caseNumber}/journey")
     @Operation(summary = "Get workflow journey", description = "Track the complete journey of a case through the workflow")
+    @PreAuthorize("hasPermission(#caseNumber, 'case', 'view')")
     public ResponseEntity<Map<String, Object>> getWorkflowJourney(
             @Parameter(description = "Case number") @PathVariable String caseNumber) {
         try {

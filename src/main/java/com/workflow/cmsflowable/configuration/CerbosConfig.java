@@ -1,0 +1,95 @@
+package com.workflow.cmsflowable.configuration;
+
+import dev.cerbos.sdk.CerbosClientBuilder;
+import dev.cerbos.sdk.CerbosBlockingClient;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@Configuration
+public class CerbosConfig {
+
+    @Value("${cerbos.host:localhost}")
+    private String cerbosHost;
+
+    @Value("${cerbos.port:3593}")
+    private int cerbosPort;
+
+    @Value("${cerbos.tls.enabled:false}")
+    private boolean tlsEnabled;
+
+    @Value("${cerbos.fallback.enabled:true}")
+    private boolean fallbackEnabled;
+
+    @PostConstruct
+    public void validateConfiguration() {
+        if (cerbosHost == null || cerbosHost.trim().isEmpty()) {
+            throw new IllegalArgumentException("Cerbos host cannot be null or empty");
+        }
+        
+        if (cerbosPort <= 0 || cerbosPort > 65535) {
+            throw new IllegalArgumentException("Cerbos port must be between 1 and 65535");
+        }
+        
+        log.info("Cerbos configuration validated - Host: {}, Port: {}, TLS: {}, Fallback: {}", 
+            cerbosHost, cerbosPort, tlsEnabled, fallbackEnabled);
+    }
+
+    @Bean
+    public CerbosBlockingClient cerbosClient() {
+        try {
+            // Check if gRPC classes are available
+            Class.forName("io.grpc.InternalGlobalInterceptors");
+            
+            CerbosClientBuilder builder = new CerbosClientBuilder(cerbosHost + ":" + cerbosPort);
+            
+            if (!tlsEnabled) {
+                builder = builder.withPlaintext();
+            }
+            
+            CerbosBlockingClient client = builder.buildBlockingClient();
+            
+            log.info("Successfully created Cerbos client for {}:{} (TLS: {})", 
+                cerbosHost, cerbosPort, tlsEnabled);
+                
+            return client;
+            
+        } catch (ClassNotFoundException e) {
+            log.warn("gRPC classes not found on classpath, Cerbos client disabled: {}", e.getMessage());
+            return null;
+        } catch (Exception e) {
+            if (fallbackEnabled) {
+                log.warn("Failed to create Cerbos client, fallback mode enabled: {}", e.getMessage());
+                // Return a null client - permission evaluators should handle this gracefully
+                return null;
+            } else {
+                log.error("Failed to create Cerbos client and fallback is disabled", e);
+                throw new RuntimeException("Cannot initialize Cerbos client", e);
+            }
+        }
+    }
+    
+    /**
+     * Check if Cerbos service is available
+     */
+    public boolean isCerbosAvailable() {
+        try {
+            CerbosBlockingClient client = cerbosClient();
+            return client != null;
+        } catch (Exception e) {
+            log.debug("Cerbos availability check failed: {}", e.getMessage());
+            return false;
+        }
+    }
+    
+    /**
+     * Get current configuration details
+     */
+    public String getConfigurationInfo() {
+        return String.format("Cerbos Config - Host: %s, Port: %d, TLS: %s, Fallback: %s", 
+            cerbosHost, cerbosPort, tlsEnabled, fallbackEnabled);
+    }
+}

@@ -8,10 +8,13 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.Size;
 
+import java.io.Serializable;
 import java.util.List;
 
 @Schema(description = "Request to create a case with multiple allegations")
-public class CreateCaseWithAllegationsRequest {
+public class CreateCaseWithAllegationsRequest implements Serializable {
+    
+    private static final long serialVersionUID = 1L;
     
     @NotBlank(message = "Case title is required")
     @Size(max = 255, message = "Case title must not exceed 255 characters")
@@ -42,7 +45,9 @@ public class CreateCaseWithAllegationsRequest {
     
     // Nested class for allegation requests
     @Schema(description = "Allegation details")
-    public static class AllegationRequest {
+    public static class AllegationRequest implements Serializable {
+        
+        private static final long serialVersionUID = 1L;
         
         @NotBlank(message = "Allegation type is required")
         @Size(max = 100, message = "Allegation type must not exceed 100 characters")

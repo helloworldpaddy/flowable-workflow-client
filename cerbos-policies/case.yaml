@@ -1,0 +1,41 @@
+---
+apiVersion: api.cerbos.dev/v1
+resourcePolicy:
+  version: "default"
+  resource: "case"
+  rules:
+    # Allow admin and intake analysts to create cases
+    - actions: ["create"]
+      effect: EFFECT_ALLOW
+      roles:
+        - "ADMIN"
+        - "INTAKE_ANALYST"
+
+    # Allow various roles to read cases
+    - actions: ["read", "view"]
+      effect: EFFECT_ALLOW
+      roles:
+        - "ADMIN"
+        - "DIRECTOR"
+        - "IU_MANAGER" 
+        - "INTAKE_ANALYST"
+        - "HR_SPECIALIST"
+        - "LEGAL_COUNSEL"
+        - "SECURITY_ANALYST"
+        - "INVESTIGATOR"
+
+    # Allow specific roles to update cases
+    - actions: ["update", "edit"]
+      effect: EFFECT_ALLOW
+      roles:
+        - "ADMIN"
+        - "DIRECTOR"
+        - "INTAKE_ANALYST"
+        - "INVESTIGATOR"
+
+    # Allow admin and director to delete cases
+    - actions: ["delete"]
+      effect: EFFECT_ALLOW
+      roles:
+        - "ADMIN"
+        - "DIRECTOR"

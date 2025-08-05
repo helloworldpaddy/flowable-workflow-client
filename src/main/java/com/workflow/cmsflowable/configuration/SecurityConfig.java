@@ -65,21 +65,10 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authz -> authz
                         // Public endpoints
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/actuator/**").permitAll()
-                        .requestMatchers("/swagger-ui/**").permitAll()
-                        .requestMatchers("/v3/api-docs/**").permitAll()
-                        
-                        // Secured API endpoints - require authentication and proper roles
-                        .requestMatchers("/v1/cases/**").authenticated()
-                        .requestMatchers("/v1/allegations/**").authenticated()
-                        .requestMatchers("/workflow/**").authenticated()
-                        .requestMatchers("/test/**").authenticated()
-                        
-                        // Admin endpoints still protected
-                        .requestMatchers("/admin/**").hasRole("ADMIN")
-                        
-                        // All other requests require authentication
+                        .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/actuator/health").permitAll()
+                        // Test endpoint for development
+                        .requestMatchers("/v1/cases/test").permitAll()
+                        // All other endpoints require authentication
                         .anyRequest().authenticated()
                 )
                 .authenticationProvider(authenticationProvider())

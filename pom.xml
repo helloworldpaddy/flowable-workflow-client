@@ -25,6 +25,9 @@
         <jjwt.version>0.12.5</jjwt.version>
         <!-- PostgreSQL driver version. Spring Boot parent manages one, but can be specified. -->
         <postgresql.version>42.7.7</postgresql.version>
+        <!-- Cerbos SDK for authorization -->
+        <cerbos.version>0.16.0</cerbos.version>
+        <grpc.version>1.62.2</grpc.version>
     </properties>
 
     <dependencies>
@@ -46,6 +49,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- OAuth2 Resource Server for JWT processing -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
         </dependency>
 
         <!-- Spring Boot Validation for bean validation (e.g., @NotNull, @Size) -->
@@ -109,6 +118,13 @@
             <artifactId>drools-compiler</artifactId>
             <version>8.44.0.Final</version>
         </dependency>
+
+        <!-- Cerbos SDK for authorization -->
+        <dependency>
+            <groupId>dev.cerbos</groupId>
+            <artifactId>cerbos-sdk-java</artifactId>
+            <version>${cerbos.version}</version>
+        </dependency>
         <dependency>
             <groupId>org.drools</groupId>
             <artifactId>drools-mvel</artifactId>
@@ -156,6 +172,23 @@
             <artifactId>jjwt-jackson</artifactId>
             <version>${jjwt.version}</version>
             <scope>runtime</scope>
+        </dependency>
+
+        <!-- Additional Cerbos Dependencies -->
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-netty-shaded</artifactId>
+            <version>${grpc.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-protobuf</artifactId>
+            <version>${grpc.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>io.grpc</groupId>
+            <artifactId>grpc-stub</artifactId>
+            <version>${grpc.version}</version>
         </dependency>
 
         <!-- Utilities -->

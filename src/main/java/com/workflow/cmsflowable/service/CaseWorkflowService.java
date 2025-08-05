@@ -14,6 +14,7 @@ import org.flowable.identitylink.api.IdentityLink;
 import org.flowable.engine.runtime.ProcessInstance;
 import org.flowable.task.api.Task;
 import org.springframework.beans.factory.annotation.Autowired;
+// import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,8 +40,12 @@ public class CaseWorkflowService {
     @Autowired
     private TaskService taskService;
     
-    private static final String CASE_WORKFLOW_PROCESS_KEY = "Process_CMS_Workflow";
+    @Autowired
+    private DetermineDepartmentRoutingService dmnService;
     
+    private static final String CASE_WORKFLOW_PROCESS_KEY = "Process_CMS_Workflow_Updated";
+    
+    // @PreAuthorize("hasPermission(#request, 'case', 'intake_initial_review')")
     public CaseWithAllegationsResponse createCaseWithWorkflow(CreateCaseWithAllegationsRequest request) {
         System.out.println("STARTING FULL CASE CREATION AND WORKFLOW PROCESS!");
         
@@ -63,14 +68,42 @@ public class CaseWorkflowService {
         Case savedCase = caseRepository.save(caseEntity);
         System.out.println("Case saved to database with ID: " + savedCase.getCaseId());
         
-        // Create work items (allegations) in work_items table
+        // Create both work items AND allegations
         List<WorkItemEntity> workItems = new ArrayList<>();
+        List<Allegation> allegations = new ArrayList<>();
         int allegationCounter = 1;
         
         for (CreateCaseWithAllegationsRequest.AllegationRequest allegationReq : request.getAllegations()) {
             String workItemId = java.util.UUID.randomUUID().toString();
+            String allegationId = "ALG-" + caseNumber.substring(4) + "-" + String.format("%02d", allegationCounter);
             String workItemNumber = caseNumber + "-WI-" + String.format("%02d", allegationCounter);
             
+            // Use DMN decision table to classify allegation and determine assigned group
+            Map<String, Object> dmnResult = dmnService.callAllegationClassificationDMN(
+                allegationReq.getAllegationType(), 
+                allegationReq.getSeverity().toString()
+            );
+            
+            String classification;
+            String assignedGroup;
+            String priority;
+            
+            if (dmnResult != null) {
+                classification = (String) dmnResult.get("classification");
+                assignedGroup = (String) dmnResult.get("assignedGroup");
+                priority = (String) dmnResult.get("priority");
+            } else {
+                // Fallback to default values if DMN returns null
+                System.out.println("DMN returned null for allegationType: " + allegationReq.getAllegationType() + ", severity: " + allegationReq.getSeverity());
+                classification = "HR";
+                assignedGroup = "HR_GROUP";
+                priority = "MEDIUM";
+            }
+            
+            // Use DMN priority if available, otherwise fall back to request priority
+            String workItemPriority = (priority != null) ? priority : request.getPriority().toString();
+            
+            // Create WorkItemEntity for work_items table
             WorkItemEntity workItem = new WorkItemEntity();
             workItem.setWorkItemId(workItemId);
             workItem.setWorkItemNumber(workItemNumber);
@@ -79,36 +112,53 @@ public class CaseWorkflowService {
             workItem.setSeverity(allegationReq.getSeverity().toString());
             workItem.setDescription(allegationReq.getDescription());
             workItem.setStatus("OPEN");
-            workItem.setPriority(request.getPriority().toString());
-            
-            allegationCounter++;
-            
-            // Classify based on allegation type
-            String classification = classifyAllegation(allegationReq.getAllegationType());
+            workItem.setPriority(workItemPriority);
             workItem.setClassification(classification);
-            workItem.setAssignedGroup(getAssignedGroup(classification));
+            workItem.setAssignedGroup(assignedGroup);
             
             workItems.add(workItem);
-            System.out.println("Created work item: " + workItemNumber + " for " + allegationReq.getAllegationType());
+            
+            // Create Allegation entity for allegations table
+            Allegation allegation = new Allegation();
+            allegation.setAllegationId(allegationId);
+            allegation.setCaseId(savedCase.getCaseId());
+            allegation.setAllegationType(allegationReq.getAllegationType());
+            allegation.setSeverity(allegationReq.getSeverity());
+            allegation.setDescription(allegationReq.getDescription());
+            allegation.setDepartmentClassification(classification);
+            allegation.setAssignedGroup(assignedGroup);
+            
+            allegations.add(allegation);
+            
+            allegationCounter++;
+            System.out.println("Created work item: " + workItemNumber + " and allegation: " + allegationId + " for " + allegationReq.getAllegationType());
         }
         
         // Save work items to database
         System.out.println("Attempting to save " + workItems.size() + " work items to database");
-        for (WorkItemEntity workItem : workItems) {
-            System.out.println("Work item to save: " + workItem.getWorkItemNumber() + " (ID: " + workItem.getWorkItemId() + ")");
-        }
-        
         List<WorkItemEntity> savedWorkItems;
         try {
             savedWorkItems = workItemRepository.saveAll(workItems);
             System.out.println("Successfully saved " + savedWorkItems.size() + " work items to database");
-            for (WorkItemEntity savedItem : savedWorkItems) {
-                System.out.println("Saved work item: " + savedItem.getWorkItemNumber() + " (ID: " + savedItem.getWorkItemId() + ")");
-            }
         } catch (Exception e) {
             System.err.println("Error saving work items: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Failed to save work items: " + e.getMessage(), e);
+        }
+        
+        // Save allegations to database
+        System.out.println("Attempting to save " + allegations.size() + " allegations to database");
+        List<Allegation> savedAllegations;
+        try {
+            savedAllegations = allegationRepository.saveAll(allegations);
+            System.out.println("Successfully saved " + savedAllegations.size() + " allegations to database");
+            for (Allegation savedAllegation : savedAllegations) {
+                System.out.println("Saved allegation: " + savedAllegation.getAllegationId() + " (Type: " + savedAllegation.getAllegationType() + ")");
+            }
+        } catch (Exception e) {
+            System.err.println("Error saving allegations: " + e.getMessage());
+            e.printStackTrace();
+            throw new RuntimeException("Failed to save allegations: " + e.getMessage(), e);
         }
         
         // Prepare workflow variables
@@ -119,39 +169,37 @@ public class CaseWorkflowService {
         workflowVariables.put("complainantName", savedCase.getComplainantName());
         workflowVariables.put("complainantEmail", savedCase.getComplainantEmail());
         workflowVariables.put("workItemCount", savedWorkItems.size());
+        workflowVariables.put("allegationCount", savedAllegations.size());
         
         // Prepare allegations data for DMN decision
-        if (!savedWorkItems.isEmpty()) {
-            WorkItemEntity primaryWorkItem = savedWorkItems.get(0);
-            workflowVariables.put("allegationType", primaryWorkItem.getType());
-            workflowVariables.put("severity", primaryWorkItem.getSeverity());
-            workflowVariables.put("classification", primaryWorkItem.getClassification());
+        if (!savedAllegations.isEmpty()) {
+            Allegation primaryAllegation = savedAllegations.get(0);
+            workflowVariables.put("allegationType", primaryAllegation.getAllegationType());
+            workflowVariables.put("severity", primaryAllegation.getSeverity().toString());
+            workflowVariables.put("classification", primaryAllegation.getDepartmentClassification());
         }
         
         // Create allegations list for multi-instance workflow
         List<Map<String, Object>> allegationsForWorkflow = new ArrayList<>();
-        for (WorkItemEntity workItem : savedWorkItems) {
-            Map<String, Object> workItemMap = new HashMap<>();
-            workItemMap.put("workItemId", workItem.getWorkItemId());
-            workItemMap.put("workItemNumber", workItem.getWorkItemNumber());
-            workItemMap.put("description", workItem.getDescription());
-            workItemMap.put("allegationType", workItem.getType());
-            workItemMap.put("severity", workItem.getSeverity());
-            workItemMap.put("classification", workItem.getClassification());
-            workItemMap.put("assignedGroup", workItem.getAssignedGroup());
-            workItemMap.put("priority", workItem.getPriority());
-            workItemMap.put("status", workItem.getStatus());
-            workItemMap.put("caseId", workItem.getCaseId());
-            allegationsForWorkflow.add(workItemMap);
+        for (Allegation allegation : savedAllegations) {
+            Map<String, Object> allegationMap = new HashMap<>();
+            allegationMap.put("allegationId", allegation.getAllegationId());
+            allegationMap.put("description", allegation.getDescription());
+            allegationMap.put("allegationType", allegation.getAllegationType());
+            allegationMap.put("severity", allegation.getSeverity().toString());
+            allegationMap.put("classification", allegation.getDepartmentClassification());
+            allegationMap.put("assignedGroup", allegation.getAssignedGroup());
+            allegationMap.put("caseId", allegation.getCaseId());
+            allegationsForWorkflow.add(allegationMap);
         }
         workflowVariables.put("allegations", allegationsForWorkflow);
         
-        System.out.println("Prepared " + allegationsForWorkflow.size() + " work items for multi-instance processing:");
+        System.out.println("Prepared " + allegationsForWorkflow.size() + " allegations for multi-instance processing:");
         
         // Determine which departments are needed based on classifications
-        boolean hrNeeded = savedWorkItems.stream().anyMatch(w -> "HR".equals(w.getClassification()));
-        boolean legalNeeded = savedWorkItems.stream().anyMatch(w -> "LEGAL".equals(w.getClassification()));
-        boolean csisNeeded = savedWorkItems.stream().anyMatch(w -> "CSIS".equals(w.getClassification()));
+        boolean hrNeeded = savedAllegations.stream().anyMatch(a -> "HR".equals(a.getDepartmentClassification()));
+        boolean legalNeeded = savedAllegations.stream().anyMatch(a -> "LEGAL".equals(a.getDepartmentClassification()));
+        boolean csisNeeded = savedAllegations.stream().anyMatch(a -> "CSIS".equals(a.getDepartmentClassification()));
         
         workflowVariables.put("hrNeeded", hrNeeded);
         workflowVariables.put("legalNeeded", legalNeeded);
@@ -187,7 +235,13 @@ public class CaseWorkflowService {
             }
             workItemRepository.saveAll(savedWorkItems);
             
-            System.out.println("Updated case and work items with process instance ID");
+            // Update allegations with process instance ID
+            for (Allegation allegation : savedAllegations) {
+                allegation.setFlowablePlanItemId(processInstance.getId());
+            }
+            allegationRepository.saveAll(savedAllegations);
+            
+            System.out.println("Updated case, work items, and allegations with process instance ID");
             
             // Get active tasks
             List<Task> activeTasks = taskService.createTaskQuery()
@@ -214,13 +268,11 @@ public class CaseWorkflowService {
             throw new RuntimeException("Failed to start workflow process: " + e.getMessage(), e);
         }
         
-        // Convert work items back to allegations for response
-        List<Allegation> allegationsForResponse = convertWorkItemsToAllegations(savedWorkItems, savedCase.getCaseNumber());
-        
         System.out.println("CASE CREATION AND WORKFLOW COMPLETED SUCCESSFULLY!");
-        return convertToCaseWithAllegationsResponse(savedCase, allegationsForResponse);
+        return convertToCaseWithAllegationsResponse(savedCase, savedAllegations);
     }
     
+    // @PreAuthorize("hasPermission(#request.taskId, 'task', 'complete')")
     public WorkflowTaskResponse completeTask(TaskTransitionRequest request) {
         Task task = taskService.createTaskQuery().taskId(request.getTaskId()).singleResult();
         if (task == null) {
@@ -274,6 +326,7 @@ public class CaseWorkflowService {
             .collect(Collectors.toList());
     }
     
+    // @PreAuthorize("hasPermission(#caseNumber, 'case', 'view')")
     public CaseWithAllegationsResponse getCaseWithAllegations(String caseNumber) {
         Case caseEntity = caseRepository.findByCaseNumber(caseNumber)
             .orElseThrow(() -> new RuntimeException("Case not found: " + caseNumber));
@@ -293,6 +346,7 @@ public class CaseWorkflowService {
             .collect(Collectors.toList());
     }
     
+    // @PreAuthorize("hasPermission(#caseNumber, 'case', 'view')")
     public CaseWithAllegationsResponse getCaseDetailsByCaseNumber(String caseNumber) {
         Case caseEntity = caseRepository.findByCaseNumber(caseNumber)
             .orElseThrow(() -> new RuntimeException("Case not found: " + caseNumber));
@@ -477,6 +531,26 @@ public class CaseWorkflowService {
                 return Severity.CRITICAL;
             default:
                 return Severity.MEDIUM; // Default fallback
+        }
+    }
+    
+    /**
+     * Helper method to create cross-reference between work items and allegations
+     * This ensures both tables are properly populated and linked
+     */
+    private void linkWorkItemsAndAllegations(List<WorkItemEntity> workItems, List<Allegation> allegations) {
+        if (workItems.size() != allegations.size()) {
+            throw new IllegalStateException("Work items and allegations lists must have the same size");
+        }
+        
+        for (int i = 0; i < workItems.size(); i++) {
+            WorkItemEntity workItem = workItems.get(i);
+            Allegation allegation = allegations.get(i);
+            
+            // Cross-reference the IDs for future lookups
+            // You could add a field to link them if needed
+            System.out.println("Linked WorkItem " + workItem.getWorkItemNumber() + 
+                             " with Allegation " + allegation.getAllegationId());
         }
     }
 }

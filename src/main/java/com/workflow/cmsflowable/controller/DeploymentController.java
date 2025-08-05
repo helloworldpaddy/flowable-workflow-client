@@ -1,71 +1,75 @@
-// src/main/java/com/workflow/cmsflowable/controller/DeploymentController.java
 package com.workflow.cmsflowable.controller;
 
-import com.workflow.cmsflowable.service.FlowableDeploymentService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import org.flowable.engine.RepositoryService;
+import org.flowable.engine.repository.Deployment;
+import org.flowable.dmn.api.DmnRepositoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import com.workflow.cmsflowable.model.DeploymentResult;
 
 @RestController
 @RequestMapping("/v1/deploy")
-@Tag(name = "Flowable Deployment Management", description = "APIs for deploying BPMN, DMN, CMMN, and Form definitions")
 public class DeploymentController {
 
     @Autowired
-    private FlowableDeploymentService deploymentService;
+    private RepositoryService repositoryService;
+    
+    @Autowired
+    private DmnRepositoryService dmnRepositoryService;
 
     @PostMapping("/all")
-    @Operation(summary = "Deploy all Flowable definitions",
-               description = "Scans and deploys all BPMN, DMN, CMMN, and Form definitions found in configured classpath directories.")
     public ResponseEntity<Map<String, Object>> deployAll() {
         try {
-            Map<String, List<DeploymentResult>> results = deploymentService.deployAllFlowableResources();
-
-            boolean overallSuccess = true;
-            for (List<DeploymentResult> typeResults : results.values()) {
-                for (DeploymentResult res : typeResults) {
-                    if (!res.isSuccess()) {
-                        overallSuccess = false;
-                        break;
-                    }
-                }
-                if (!overallSuccess) break;
-            }
+            // Deploy BPMN and DMN files
+            Deployment deployment = repositoryService.createDeployment()
+                .addClasspathResource("processes/Process_CMS_Workflow_Updated.bpmn20.xml")
+                .addClasspathResource("dmn/allegation-classification.dmn")
+                .name("CMS Workflow Deployment")
+                .deploy();
 
             Map<String, Object> response = new HashMap<>();
-            response.put("success", overallSuccess);
-            response.put("message", overallSuccess ? "All identified resources deployed successfully" : "Some resources failed to deploy. Check individual results.");
-            response.put("results", results); // Contains detailed results for each type and file
+            response.put("success", true);
+            response.put("deploymentId", deployment.getId());
+            response.put("deploymentName", deployment.getName());
+            response.put("message", "Successfully deployed BPMN and DMN files");
 
             return ResponseEntity.ok(response);
+            
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
-            errorResponse.put("message", "An unexpected error occurred during deployment: " + e.getMessage());
-            errorResponse.put("error", e.getClass().getSimpleName());
+            errorResponse.put("error", e.getMessage());
             return ResponseEntity.internalServerError().body(errorResponse);
         }
     }
 
     @GetMapping("/status")
-    @Operation(summary = "Get deployment status",
-               description = "Check the counts of currently deployed BPMN, DMN, CMMN, and Form definitions.")
     public ResponseEntity<Map<String, Object>> getDeploymentStatus() {
         try {
-            Map<String, Object> status = deploymentService.getDeploymentStatus();
+            Map<String, Object> status = new HashMap<>();
+            
+            // Check if process definition exists
+            long processCount = repositoryService.createProcessDefinitionQuery()
+                .processDefinitionKey("Process_CMS_Workflow_Updated")
+                .count();
+            
+            // Check if DMN decision exists  
+            long dmnCount = dmnRepositoryService.createDecisionQuery()
+                .decisionKey("allegation-classification")
+                .count();
+            
+            status.put("processDefinitionCount", processCount);
+            status.put("dmnDecisionCount", dmnCount);
+            status.put("processDeployed", processCount > 0);
+            status.put("dmnDeployed", dmnCount > 0);
+            
             return ResponseEntity.ok(status);
+            
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
-            errorResponse.put("success", false);
-            errorResponse.put("message", "Failed to check deployment status: " + e.getMessage());
-            errorResponse.put("error", e.getClass().getSimpleName());
+            errorResponse.put("error", e.getMessage());
             return ResponseEntity.internalServerError().body(errorResponse);
         }
     }

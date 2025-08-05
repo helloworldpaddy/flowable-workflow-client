@@ -1,0 +1,358 @@
+---
+name: Case Management Authorization Tests
+description: Comprehensive tests for case management workflow authorization
+
+principals:
+  # Director - has full access
+  director:
+    id: "john.director"
+    roles: ["DIRECTOR_GROUP"]
+    attr:
+      userId: "john.director"
+      username: "john.director"
+      roles: ["DIRECTOR_GROUP"]
+      is_manager: true
+
+  # AROG member - can view all cases and handle AROG reviews
+  arog_member:
+    id: "jane.arog"
+    roles: ["AROG_GROUP"]
+    attr:
+      userId: "jane.arog"
+      username: "jane.arog"
+      roles: ["AROG_GROUP"]
+      is_manager: false
+
+  # Intake Analyst - handles initial complaint intake
+  intake_analyst:
+    id: "bob.intake"
+    roles: ["INTAKE_ANALYST_GROUP"]
+    attr:
+      userId: "bob.intake"
+      username: "bob.intake"
+      roles: ["INTAKE_ANALYST_GROUP"]
+      is_manager: false
+
+  # IU Analyst - handles department routing
+  iu_analyst:
+    id: "alice.iu"
+    roles: ["IU_ANALYST_GROUP"]
+    attr:
+      userId: "alice.iu"
+      username: "alice.iu"
+      roles: ["IU_ANALYST_GROUP"]
+      is_manager: false
+
+  # IU Manager - approves investigation plans and ROIs
+  iu_manager:
+    id: "mike.ium"
+    roles: ["IU_MANAGER_GROUP"]
+    attr:
+      userId: "mike.ium"
+      username: "mike.ium"
+      roles: ["IU_MANAGER_GROUP"]
+      is_manager: true
+
+  # Investigator - conducts investigations
+  investigator:
+    id: "sarah.inv"
+    roles: ["INVESTIGATOR_GROUP"]
+    attr:
+      userId: "sarah.inv"
+      username: "sarah.inv"
+      roles: ["INVESTIGATOR_GROUP"]
+      is_manager: false
+
+  # HR Group member
+  hr_analyst:
+    id: "tom.hr"
+    roles: ["HR_GROUP"]
+    attr:
+      userId: "tom.hr"
+      username: "tom.hr"
+      roles: ["HR_GROUP"]
+      is_manager: false
+
+  # Investigation Manager - assesses findings
+  investigation_manager:
+    id: "lisa.invmgr"
+    roles: ["INVESTIGATION_MANAGER_GROUP"]
+    attr:
+      userId: "lisa.invmgr"
+      username: "lisa.invmgr"
+      roles: ["INVESTIGATION_MANAGER_GROUP"]
+      is_manager: true
+
+  # HR/Legal Adjudication member
+  hr_legal_adjudicator:
+    id: "paul.adjud"
+    roles: ["HR_LEGAL_ADJUDICATION_GROUP"]
+    attr:
+      userId: "paul.adjud"
+      username: "paul.adjud"
+      roles: ["HR_LEGAL_ADJUDICATION_GROUP"]
+      is_manager: false
+
+resources:
+  # Case in initial complaint state
+  complaint_received_case:
+    kind: "case"
+    id: "CMS-2025-001"
+    attr:
+      caseNumber: "CMS-2025-001"
+      status: "COMPLAINT_RECEIVED"
+      currentTaskGroup: "INTAKE_ANALYST_GROUP"
+      assignedUsers: ["bob.intake"]
+      relevantDepartments: ["HR"]
+      ipApproved: false
+      roiApproved: false
+      allegationsSubstantiated: false
+      isArogCase: false
+      caseApprovedForClosure: false
+
+  # Case routed to department
+  department_routed_case:
+    kind: "case"
+    id: "CMS-2025-002"
+    attr:
+      caseNumber: "CMS-2025-002"
+      status: "DEPARTMENT_ROUTED"
+      currentTaskGroup: "IU_ANALYST_GROUP"
+      assignedUsers: ["alice.iu"]
+      relevantDepartments: ["HR", "LEGAL"]
+      ipApproved: false
+      roiApproved: false
+      allegationsSubstantiated: false
+      isArogCase: false
+      caseApprovedForClosure: false
+
+  # Case in active investigation
+  active_investigation_case:
+    kind: "case"
+    id: "CMS-2025-003"
+    attr:
+      caseNumber: "CMS-2025-003"
+      status: "ACTIVE_INVESTIGATION"
+      currentTaskGroup: "INVESTIGATOR_GROUP"
+      assignedUsers: ["sarah.inv"]
+      relevantDepartments: ["HR"]
+      ipApproved: true
+      roiApproved: false
+      allegationsSubstantiated: false
+      isArogCase: false
+      caseApprovedForClosure: false
+
+  # Case requiring AROG review
+  arog_case:
+    kind: "case"
+    id: "CMS-2025-004"
+    attr:
+      caseNumber: "CMS-2025-004"
+      status: "AROG_REVIEW"
+      currentTaskGroup: "AROG_GROUP"
+      assignedUsers: ["jane.arog"]
+      relevantDepartments: ["HR", "LEGAL", "CSIS"]
+      ipApproved: true
+      roiApproved: true
+      allegationsSubstantiated: true
+      isArogCase: true
+      caseApprovedForClosure: false
+
+  # Case ready for closure
+  final_review_case:
+    kind: "case"
+    id: "CMS-2025-005"
+    attr:
+      caseNumber: "CMS-2025-005"
+      status: "FINAL_REVIEW"
+      currentTaskGroup: "DIRECTOR_GROUP"
+      assignedUsers: ["john.director"]
+      relevantDepartments: ["HR"]
+      ipApproved: true
+      roiApproved: true
+      allegationsSubstantiated: true
+      isArogCase: false
+      caseApprovedForClosure: false
+
+tests:
+  # View permission tests
+  - name: "Director can view any case"
+    input:
+      principals: ["director"]
+      resources: ["complaint_received_case", "department_routed_case", "active_investigation_case", "arog_case", "final_review_case"]
+      actions: ["view"]
+    expected:
+      - principal: "director"
+        resource: "complaint_received_case"
+        actions:
+          view: EFFECT_ALLOW
+      - principal: "director"
+        resource: "department_routed_case"
+        actions:
+          view: EFFECT_ALLOW
+      - principal: "director"
+        resource: "active_investigation_case"
+        actions:
+          view: EFFECT_ALLOW
+      - principal: "director"
+        resource: "arog_case"
+        actions:
+          view: EFFECT_ALLOW
+      - principal: "director"
+        resource: "final_review_case"
+        actions:
+          view: EFFECT_ALLOW
+
+  - name: "AROG member can view any case"
+    input:
+      principals: ["arog_member"]
+      resources: ["complaint_received_case", "department_routed_case", "active_investigation_case", "arog_case", "final_review_case"]
+      actions: ["view"]
+    expected:
+      - principal: "arog_member"
+        resource: "complaint_received_case"
+        actions:
+          view: EFFECT_ALLOW
+      - principal: "arog_member"
+        resource: "department_routed_case"
+        actions:
+          view: EFFECT_ALLOW
+      - principal: "arog_member"
+        resource: "active_investigation_case"
+        actions:
+          view: EFFECT_ALLOW
+      - principal: "arog_member"
+        resource: "arog_case"
+        actions:
+          view: EFFECT_ALLOW
+      - principal: "arog_member"
+        resource: "final_review_case"
+        actions:
+          view: EFFECT_ALLOW
+
+  - name: "Intake analyst can only view assigned cases"
+    input:
+      principals: ["intake_analyst"]
+      resources: ["complaint_received_case", "department_routed_case"]
+      actions: ["view"]
+    expected:
+      - principal: "intake_analyst"
+        resource: "complaint_received_case"
+        actions:
+          view: EFFECT_ALLOW  # Assigned user
+      - principal: "intake_analyst"
+        resource: "department_routed_case"
+        actions:
+          view: EFFECT_DENY   # Not assigned
+
+  # Workflow action tests
+  - name: "Intake analyst can perform initial review"
+    input:
+      principals: ["intake_analyst"]
+      resources: ["complaint_received_case"]
+      actions: ["intake_initial_review"]
+    expected:
+      - principal: "intake_analyst"
+        resource: "complaint_received_case"
+        actions:
+          intake_initial_review: EFFECT_ALLOW
+
+  - name: "Intake analyst cannot perform initial review on wrong status"
+    input:
+      principals: ["intake_analyst"]
+      resources: ["department_routed_case"]
+      actions: ["intake_initial_review"]
+    expected:
+      - principal: "intake_analyst"
+        resource: "department_routed_case"
+        actions:
+          intake_initial_review: EFFECT_DENY
+
+  - name: "IU analyst can perform intake review"
+    input:
+      principals: ["iu_analyst"]
+      resources: ["department_routed_case"]
+      actions: ["iu_intake_review"]
+    expected:
+      - principal: "iu_analyst"
+        resource: "department_routed_case"
+        actions:
+          iu_intake_review: EFFECT_ALLOW
+
+  - name: "Investigator can conduct investigation when IP approved"
+    input:
+      principals: ["investigator"]
+      resources: ["active_investigation_case"]
+      actions: ["conduct_investigation"]
+    expected:
+      - principal: "investigator"
+        resource: "active_investigation_case"
+        actions:
+          conduct_investigation: EFFECT_ALLOW
+
+  - name: "AROG member can perform AROG review"
+    input:
+      principals: ["arog_member"]
+      resources: ["arog_case"]
+      actions: ["arog_review"]
+    expected:
+      - principal: "arog_member"
+        resource: "arog_case"
+        actions:
+          arog_review: EFFECT_ALLOW
+
+  - name: "Director can perform final review"
+    input:
+      principals: ["director"]
+      resources: ["final_review_case"]
+      actions: ["final_review_closure"]
+    expected:
+      - principal: "director"
+        resource: "final_review_case"
+        actions:
+          final_review_closure: EFFECT_ALLOW
+
+  # Negative tests - unauthorized actions
+  - name: "HR analyst cannot perform intake review"
+    input:
+      principals: ["hr_analyst"]
+      resources: ["complaint_received_case"]
+      actions: ["intake_initial_review"]
+    expected:
+      - principal: "hr_analyst"
+        resource: "complaint_received_case"
+        actions:
+          intake_initial_review: EFFECT_DENY
+
+  - name: "Intake analyst cannot conduct investigation"
+    input:
+      principals: ["intake_analyst"]
+      resources: ["active_investigation_case"]
+      actions: ["conduct_investigation"]
+    expected:
+      - principal: "intake_analyst"
+        resource: "active_investigation_case"
+        actions:
+          conduct_investigation: EFFECT_DENY
+
+  - name: "Regular analyst cannot perform AROG review"
+    input:
+      principals: ["iu_analyst"]
+      resources: ["arog_case"]
+      actions: ["arog_review"]
+    expected:
+      - principal: "iu_analyst"
+        resource: "arog_case"
+        actions:
+          arog_review: EFFECT_DENY
+
+  - name: "Non-director cannot perform final review"
+    input:
+      principals: ["iu_manager"]
+      resources: ["final_review_case"]
+      actions: ["final_review_closure"]
+    expected:
+      - principal: "iu_manager"
+        resource: "final_review_case"
+        actions:
+          final_review_closure: EFFECT_DENY

@@ -9,4 +9,23 @@
     <!-- CMS FLOWABLE DATABASE MIGRATION STRATEGY     -->
     <!-- ============================================ -->
     
+    <!-- Include all changelog files in order -->
+    
+    <!-- Create core table structure -->
+    <include file="db/changelog/002-create-core-tables.xml"/>
+    
+    <!-- Create indexes and constraints -->
+    <include file="db/changelog/003-create-indexes-constraints.xml"/>
+    
+    <!-- Seed Data Insertion Only -->
+    <include file="db/changelog/004-insert-seed-data.xml"/>
+    
+    <!-- Database Enhancements for Frontend Integration -->
+    <include file="db/changelog/005-add-reference-tables.xml"/>
+    <include file="db/changelog/006-enhance-cases-table.xml"/>
+    <include file="db/changelog/007-create-case-entities.xml"/>
+    <include file="db/changelog/008-enhance-allegations-table.xml"/>
+    <include file="db/changelog/009-create-case-narratives.xml"/>
+    <include file="db/changelog/010-enhance-departments.xml"/>
+    
 </databaseChangeLog>

@@ -95,6 +95,7 @@ full_startup_and_request_log.txt
 application-local.yml
 application-dev.yml
 application-prod.yml
+.env
 
 # Test results
 /test-results/

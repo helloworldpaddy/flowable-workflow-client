@@ -48,6 +48,32 @@ public class Allegation {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
+    // Additional fields from frontend requirements
+    @Column(name = "allegation_number", length = 100)
+    private String allegationNumber;
+    
+    @Column(name = "investigation_function", length = 50)
+    private String investigationFunction;
+    
+    @Column(name = "subject_entity_id", length = 50)
+    private String subjectEntityId;
+    
+    @Column(name = "allegation_category", length = 20)
+    @Enumerated(EnumType.STRING)
+    private AllegationCategory allegationCategory;
+    
+    @Column(name = "grc_taxonomy_1", length = 100)
+    private String grcTaxonomy1;
+    
+    @Column(name = "grc_taxonomy_2", length = 100)
+    private String grcTaxonomy2;
+    
+    @Column(name = "grc_taxonomy_3", length = 100)
+    private String grcTaxonomy3;
+    
+    @Column(name = "grc_taxonomy_4", length = 100)
+    private String grcTaxonomy4;
+    
     // Constructors
     public Allegation() {}
     
@@ -146,5 +172,35 @@ public class Allegation {
     
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+    
+    // Getters and Setters for new fields
+    public String getAllegationNumber() { return allegationNumber; }
+    public void setAllegationNumber(String allegationNumber) { this.allegationNumber = allegationNumber; }
+    
+    public String getInvestigationFunction() { return investigationFunction; }
+    public void setInvestigationFunction(String investigationFunction) { this.investigationFunction = investigationFunction; }
+    
+    public String getSubjectEntityId() { return subjectEntityId; }
+    public void setSubjectEntityId(String subjectEntityId) { this.subjectEntityId = subjectEntityId; }
+    
+    public AllegationCategory getAllegationCategory() { return allegationCategory; }
+    public void setAllegationCategory(AllegationCategory allegationCategory) { this.allegationCategory = allegationCategory; }
+    
+    public String getGrcTaxonomy1() { return grcTaxonomy1; }
+    public void setGrcTaxonomy1(String grcTaxonomy1) { this.grcTaxonomy1 = grcTaxonomy1; }
+    
+    public String getGrcTaxonomy2() { return grcTaxonomy2; }
+    public void setGrcTaxonomy2(String grcTaxonomy2) { this.grcTaxonomy2 = grcTaxonomy2; }
+    
+    public String getGrcTaxonomy3() { return grcTaxonomy3; }
+    public void setGrcTaxonomy3(String grcTaxonomy3) { this.grcTaxonomy3 = grcTaxonomy3; }
+    
+    public String getGrcTaxonomy4() { return grcTaxonomy4; }
+    public void setGrcTaxonomy4(String grcTaxonomy4) { this.grcTaxonomy4 = grcTaxonomy4; }
+    
+    // Enum for Allegation Category
+    public enum AllegationCategory {
+        TRACKED, NON_TRACKED
     }
 }

@@ -1,0 +1,822 @@
+openapi: 3.0.3
+info:
+  title: CMS Flowable API - Updated
+  description: |
+    Comprehensive Case Management System API with integrated Flowable BPMN workflow engine and DMN decision tables.
+    
+    ## Key Features
+    - **BPMN Workflow Integration**: Process_CMS_Workflow_Updated with 11 user tasks
+    - **DMN Decision Routing**: Automatic allegation classification and department assignment
+    - **Multi-Department Support**: HR, Legal, and CSIS coordination
+    - **Cerbos Authorization**: Fine-grained ABAC security model
+    - **Real-time Workflow Tracking**: Complete case journey monitoring
+    
+    ## Workflow Process
+    The system implements a comprehensive investigation workflow:
+    1. **Intake & Initial Review** (INTAKE_ANALYST_GROUP)
+    2. **DMN-Based Department Routing** (allegation-classification decision table)
+    3. **Multi-Department Assignment** (HR_GROUP, LEGAL_GROUP, CSIS_GROUP)
+    4. **Investigation Planning & Execution** (INVESTIGATOR_GROUP)
+    5. **Report Generation & Approval** (IU_MANAGER_GROUP)
+    6. **Findings Assessment** (INVESTIGATION_MANAGER_GROUP)
+    7. **HR/Legal Adjudication** (HR_LEGAL_ADJUDICATION_GROUP)
+    8. **AROG Review** (AROG_GROUP) for high-impact cases
+    9. **Final Review & Closure** (DIRECTOR_GROUP)
+    
+    ## DMN Decision Table
+    The allegation-classification DMN automatically routes allegations based on:
+    - **Allegation Type**: HARASSMENT, DISCRIMINATION, FRAUD, SECURITY_BREACH, etc.
+    - **Severity Level**: LOW, MEDIUM, HIGH, CRITICAL
+    - **Output Classification**: HR, LEGAL, CSIS departments
+    - **Assigned Groups**: HR_SPECIALIST, LEGAL_COUNSEL, CSIS_ANALYST
+    
+    ## Authorization Model
+    Role-based access control with contextual permissions:
+    - **DIRECTOR_GROUP**: Full access and case closure authority
+    - **AROG_GROUP**: Independent review capabilities for high-impact cases
+    - **MANAGER_GROUPS**: Approval and oversight responsibilities
+    - **ANALYST_GROUPS**: Department-specific case handling
+    - **INVESTIGATOR_GROUP**: Investigation planning and execution
+  version: 2.0.0
+  termsOfService: https://company.com/terms
+  contact:
+    name: CMS Development Team
+    email: cms-dev@company.com
+    url: https://company.com/cms
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080/api
+    description: Development server
+  - url: https://cms-staging.company.com/api
+    description: Staging server
+  - url: https://cms.company.com/api
+    description: Production server
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+
+paths:
+  /v1/health:
+    get:
+      tags:
+        - Health Check
+      summary: API Health Check
+      description: Basic endpoint to verify API connectivity and service health
+      operationId: testEndpoint
+      responses:
+        '200':
+          description: API is operational
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Case management controller is working!"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /v1/deploy/all:
+    post:
+      tags:
+        - Deployment Management
+      summary: Deploy BPMN and DMN Files
+      description: |
+        Deploy the updated BPMN process definition (Process_CMS_Workflow_Updated) and 
+        DMN decision table (allegation-classification) to the Flowable engine.
+        
+        **Required Files:**
+        - Process_CMS_Workflow_Updated.bpmn20.xml
+        - allegation-classification.dmn
+      operationId: deployAll
+      responses:
+        '200':
+          description: Deployment successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentResponse'
+              example:
+                success: true
+                deploymentId: "4df2093a-6744-11f0-9c27-325aff8b6f18"
+                deploymentName: "CMS Workflow Deployment"
+                message: "Successfully deployed BPMN and DMN files"
+        '500':
+          description: Deployment failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentResponse'
+              example:
+                success: false
+                error: "XML parsing error in BPMN file"
+
+  /v1/deploy/status:
+    get:
+      tags:
+        - Deployment Management
+      summary: Check Deployment Status
+      description: Verify that BPMN process definitions and DMN decision tables are properly deployed
+      operationId: getDeploymentStatus
+      responses:
+        '200':
+          description: Deployment status information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentStatus'
+              example:
+                processDefinitionCount: 1
+                dmnDecisionCount: 7
+                processDeployed: true
+                dmnDeployed: true
+
+  /v1/cases:
+    post:
+      tags:
+        - Case Management
+      summary: Create New Case
+      description: |
+        Create a new case with multiple allegations and automatically start the workflow process.
+        
+        **Workflow Behavior:**
+        1. Case created with generated case number (CMS-YYYY-###)
+        2. Each allegation processed through DMN decision table
+        3. Automatic department routing and group assignment
+        4. BPMN workflow instance started (Process_CMS_Workflow_Updated)
+        5. Initial task assigned to INTAKE_ANALYST_GROUP
+        
+        **DMN Classification:**
+        - Allegations automatically classified to HR, LEGAL, or CSIS departments
+        - Groups assigned based on allegation type and severity
+        - Priority escalation for high-severity cases
+      operationId: createCase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCaseRequest'
+            examples:
+              simpleCase:
+                summary: Simple HR harassment case
+                value:
+                  title: "Employee Harassment Complaint"
+                  description: "Formal complaint regarding inappropriate workplace behavior"
+                  complainantName: "Jane Smith"
+                  complainantEmail: "jane.smith@company.com"
+                  department: "HR"
+                  priority: "HIGH"
+                  allegations:
+                    - allegationType: "HARASSMENT"
+                      severity: "HIGH"
+                      description: "Inappropriate comments and unwanted physical contact"
+              complexCase:
+                summary: Multi-department complex case
+                value:
+                  title: "Executive Level Investigation"
+                  description: "Complex case requiring multiple departments"
+                  complainantName: "Senior Manager"
+                  complainantEmail: "manager@company.com"
+                  department: "Executive"
+                  priority: "CRITICAL"
+                  allegations:
+                    - allegationType: "HARASSMENT"
+                      severity: "CRITICAL"
+                      description: "Executive harassment requiring AROG review"
+                    - allegationType: "FRAUD"
+                      severity: "HIGH"
+                      description: "Financial misconduct allegations"
+                    - allegationType: "SECURITY_BREACH"
+                      severity: "MEDIUM"
+                      description: "Unauthorized access to confidential data"
+      responses:
+        '201':
+          description: Case created successfully with workflow started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    get:
+      tags:
+        - Case Management
+      summary: Get All Cases
+      description: Retrieve a paginated list of all cases with optional filtering by status
+      operationId: getAllCases
+      parameters:
+        - name: page
+          in: query
+          description: Page number (0-based)
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: size
+          in: query
+          description: Number of cases per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: status
+          in: query
+          description: Filter by case status
+          required: false
+          schema:
+            $ref: '#/components/schemas/CaseStatus'
+      responses:
+        '200':
+          description: List of cases
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CaseResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /v1/cases/multi-department:
+    post:
+      tags:
+        - Case Management
+      summary: Create Multi-Department Case
+      description: |
+        Specialized endpoint for creating complex cases that require multiple departments.
+        
+        **Requirements:**
+        - Minimum 2 allegations with different types
+        - Automatic multi-department routing via DMN
+        - Triggers parallel workflow execution
+        - May require AROG review for high-impact cases
+      operationId: createMultiDepartmentCase
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCaseRequest'
+      responses:
+        '201':
+          description: Multi-department case created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseResponse'
+        '400':
+          description: Invalid request - requires minimum 2 allegations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/cases/{caseNumber}:
+    get:
+      tags:
+        - Case Management
+      summary: Get Case by Case Number
+      description: |
+        Retrieve detailed information about a specific case including:
+        - Complete case details and metadata
+        - All allegations with DMN classification results
+        - Department assignments and group allocations
+        - Workflow instance information
+        - Current case status and timeline
+      operationId: getCaseDetails
+      parameters:
+        - name: caseNumber
+          in: path
+          description: Case number (format: CMS-YYYY-###)
+          required: true
+          schema:
+            type: string
+            pattern: '^CMS-\d{4}-\d{3}$'
+            example: "CMS-2025-016"
+      responses:
+        '200':
+          description: Case details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CaseResponse'
+        '404':
+          description: Case not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /v1/cases/{caseNumber}/workflow-status:
+    get:
+      tags:
+        - Workflow Management
+      summary: Get Workflow Status
+      description: |
+        Get the current workflow status and progress for a specific case including:
+        - Process instance status (ACTIVE, COMPLETED, SUSPENDED)
+        - Current workflow variables and state
+        - Active tasks and assignments
+        - Process timeline and milestones
+      operationId: getWorkflowStatus
+      parameters:
+        - name: caseNumber
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^CMS-\d{4}-\d{3}$'
+      responses:
+        '200':
+          description: Workflow status information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowStatus'
+              examples:
+                activeWorkflow:
+                  summary: Active workflow process
+                  value:
+                    status: "ACTIVE"
+                    processInstanceId: "12345-67890-abcdef"
+                    processDefinitionId: "Process_CMS_Workflow_Updated:1:xyz"
+                    startTime: "2025-07-22T14:40:30Z"
+                    variables:
+                      status: "DEPARTMENT_ROUTED"
+                      currentTaskGroup: "HR_GROUP"
+                      relevantDepartments: ["HR", "LEGAL"]
+                      ipApproved: false
+                      roiApproved: false
+                      allegationsSubstantiated: false
+                      isArogCase: false
+                completedWorkflow:
+                  summary: Completed workflow
+                  value:
+                    status: "COMPLETED"
+                    message: "Workflow has been completed"
+                notFound:
+                  summary: No workflow found
+                  value:
+                    status: "NOT_FOUND"
+                    message: "No workflow found for this case"
+
+  /v1/cases/{caseNumber}/journey:
+    get:
+      tags:
+        - Workflow Management
+      summary: Get Workflow Journey
+      description: |
+        Track the complete journey of a case through the workflow stages showing:
+        - Completed workflow stages with timestamps
+        - Current active tasks and assignments
+        - Pending future stages
+        - DMN decision results and routing
+        - Task completion history
+      operationId: getWorkflowJourney
+      parameters:
+        - name: caseNumber
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^CMS-\d{4}-\d{3}$'
+      responses:
+        '200':
+          description: Complete workflow journey
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkflowJourney'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from authentication endpoint
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for service-to-service authentication
+
+  schemas:
+    CreateCaseRequest:
+      type: object
+      required:
+        - title
+        - description
+        - complainantName
+        - complainantEmail
+        - allegations
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          description: Title of the case
+          example: "Employee Misconduct Investigation"
+        description:
+          type: string
+          maxLength: 2000
+          description: Detailed description of the case
+          example: "Formal complaint regarding workplace harassment and policy violations"
+        complainantName:
+          type: string
+          maxLength: 100
+          description: Name of the person filing the complaint
+          example: "Jane Smith"
+        complainantEmail:
+          type: string
+          format: email
+          maxLength: 255
+          description: Email address of the complainant
+          example: "jane.smith@company.com"
+        department:
+          type: string
+          maxLength: 50
+          description: Department where the incident occurred
+          example: "Human Resources"
+        priority:
+          $ref: '#/components/schemas/Priority'
+        allegations:
+          type: array
+          minItems: 1
+          maxItems: 10
+          description: List of allegations associated with this case
+          items:
+            $ref: '#/components/schemas/AllegationRequest'
+
+    AllegationRequest:
+      type: object
+      required:
+        - allegationType
+        - description
+      properties:
+        allegationType:
+          type: string
+          maxLength: 100
+          description: Type of allegation
+          enum:
+            - HARASSMENT
+            - DISCRIMINATION
+            - VIOLENCE
+            - FRAUD
+            - THEFT
+            - SECURITY_BREACH
+            - POLICY_VIOLATION
+            - MISCONDUCT
+            - RETALIATION
+            - CONFLICT_OF_INTEREST
+          example: "HARASSMENT"
+        severity:
+          $ref: '#/components/schemas/Severity'
+        description:
+          type: string
+          maxLength: 1000
+          description: Detailed description of the allegation
+          example: "Inappropriate behavior and unwanted physical contact in the workplace"
+
+    CaseResponse:
+      type: object
+      properties:
+        caseId:
+          type: string
+          description: Internal case ID
+          example: "CMS-2025-016"
+        caseNumber:
+          type: string
+          description: Human-readable case number
+          pattern: '^CMS-\d{4}-\d{3}$'
+          example: "CMS-2025-016"
+        title:
+          type: string
+          description: Title of the case
+          example: "Employee Harassment Investigation"
+        description:
+          type: string
+          description: Case description
+        priority:
+          $ref: '#/components/schemas/Priority'
+        status:
+          $ref: '#/components/schemas/CaseStatus'
+        complainantName:
+          type: string
+          example: "Jane Smith"
+        complainantEmail:
+          type: string
+          format: email
+          example: "jane.smith@company.com"
+        workflowInstanceKey:
+          type: integer
+          description: Flowable process instance identifier
+          example: 1445896135
+        createdAt:
+          type: string
+          format: date-time
+          description: Case creation timestamp
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+        createdBy:
+          type: string
+          nullable: true
+          description: User who created the case
+        assignedTo:
+          type: string
+          nullable: true
+          description: Currently assigned user
+        allegations:
+          type: array
+          items:
+            $ref: '#/components/schemas/AllegationResponse'
+
+    AllegationResponse:
+      type: object
+      properties:
+        allegationId:
+          type: string
+          format: uuid
+          description: Unique allegation identifier
+        allegationType:
+          type: string
+          description: Type of allegation
+        severity:
+          $ref: '#/components/schemas/Severity'
+        description:
+          type: string
+          description: Allegation description
+        departmentClassification:
+          type: string
+          description: Department assigned by DMN decision table
+          enum: [HR, LEGAL, CSIS]
+          example: "HR"
+        assignedGroup:
+          type: string
+          description: Group assigned by DMN decision table
+          example: "HR_SPECIALIST"
+        flowablePlanItemId:
+          type: string
+          description: Flowable plan item identifier
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    DeploymentResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          description: Whether deployment was successful
+        deploymentId:
+          type: string
+          description: Flowable deployment identifier
+          example: "4df2093a-6744-11f0-9c27-325aff8b6f18"
+        deploymentName:
+          type: string
+          description: Human-readable deployment name
+          example: "CMS Workflow Deployment"
+        message:
+          type: string
+          description: Deployment result message
+        error:
+          type: string
+          description: Error message if deployment failed
+
+    DeploymentStatus:
+      type: object
+      properties:
+        processDefinitionCount:
+          type: integer
+          description: Number of deployed BPMN process definitions
+          example: 1
+        dmnDecisionCount:
+          type: integer
+          description: Number of deployed DMN decision tables
+          example: 7
+        processDeployed:
+          type: boolean
+          description: Whether the main process is deployed
+          example: true
+        dmnDeployed:
+          type: boolean
+          description: Whether DMN decision tables are deployed
+          example: true
+
+    WorkflowStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [ACTIVE, COMPLETED, SUSPENDED, NOT_FOUND]
+          description: Current workflow status
+        processInstanceId:
+          type: string
+          description: Flowable process instance ID
+        processDefinitionId:
+          type: string
+          description: Process definition identifier
+        startTime:
+          type: string
+          format: date-time
+          description: Workflow start time
+        variables:
+          type: object
+          description: Current process variables
+          additionalProperties: true
+        message:
+          type: string
+          description: Status message
+
+    WorkflowJourney:
+      type: object
+      properties:
+        caseNumber:
+          type: string
+          description: Case number
+          example: "CMS-2025-016"
+        stages:
+          type: array
+          description: Workflow stages in chronological order
+          items:
+            $ref: '#/components/schemas/WorkflowStage'
+
+    WorkflowStage:
+      type: object
+      properties:
+        stage:
+          type: string
+          description: Stage name
+          example: "Intake"
+        status:
+          type: string
+          enum: [completed, in_progress, pending]
+          description: Stage completion status
+        timestamp:
+          type: string
+          format: date-time
+          description: Stage completion time
+        assignedGroup:
+          type: string
+          description: Group responsible for this stage
+          example: "INTAKE_ANALYST_GROUP"
+        dmnResult:
+          type: string
+          description: DMN decision result for classification stages
+          example: "HR_ROUTING"
+
+    Priority:
+      type: string
+      enum: [LOW, MEDIUM, HIGH, CRITICAL]
+      default: MEDIUM
+      description: Case priority level
+      example: "HIGH"
+
+    Severity:
+      type: string
+      enum: [LOW, MEDIUM, HIGH, CRITICAL]
+      default: MEDIUM
+      description: Allegation severity level
+      example: "HIGH"
+
+    CaseStatus:
+      type: string
+      enum: 
+        - OPEN
+        - COMPLAINT_RECEIVED
+        - DEPARTMENT_ROUTED
+        - INVESTIGATION_PLANNING
+        - ACTIVE_INVESTIGATION
+        - REPORT_DRAFTING
+        - REPORT_APPROVAL
+        - FINALIZATION_DISCIPLINE
+        - ADJUDICATION
+        - DISCIPLINARY_ACTION
+        - AROG_REVIEW
+        - FINAL_REVIEW
+        - CLOSED
+        - SUSPENDED
+      description: Current case status based on workflow progress
+      example: "OPEN"
+
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+        status:
+          type: integer
+          description: HTTP status code
+        error:
+          type: string
+          description: Error type
+        message:
+          type: string
+          description: Error message
+        path:
+          type: string
+          description: Request path that caused the error
+        validationErrors:
+          type: array
+          nullable: true
+          description: Field validation errors
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                description: Field name
+              message:
+                type: string
+                description: Validation error message
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid input parameters
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            timestamp: "2025-07-22T14:40:30.123Z"
+            status: 400
+            error: "Bad Request"
+            message: "Validation failed for request parameters"
+            path: "/api/v1/cases"
+            validationErrors:
+              - field: "title"
+                message: "Title is required"
+
+    Unauthorized:
+      description: Unauthorized - authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            timestamp: "2025-07-22T14:40:30.123Z"
+            status: 401
+            error: "Unauthorized"
+            message: "Authentication credentials are required"
+            path: "/api/v1/cases"
+
+    Forbidden:
+      description: Forbidden - insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            timestamp: "2025-07-22T14:40:30.123Z"
+            status: 403
+            error: "Forbidden"
+            message: "Access denied. You don't have permission to access this resource."
+            path: "/api/v1/cases"
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            timestamp: "2025-07-22T14:40:30.123Z"
+            status: 500
+            error: "Internal Server Error"
+            message: "An unexpected error occurred. Please try again later."
+            path: "/api/v1/cases"
+
+tags:
+  - name: Health Check
+    description: API health and connectivity verification
+  - name: Deployment Management
+    description: BPMN and DMN deployment operations
+  - name: Case Management
+    description: Core case creation and management operations
+  - name: Workflow Management
+    description: Workflow status tracking and journey monitoring

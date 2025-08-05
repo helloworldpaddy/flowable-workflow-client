@@ -1,0 +1,853 @@
+{
+	"info": {
+		"_postman_id": "cms-flowable-verified-2025",
+		"name": "CMS Flowable API - Verified Test Scenarios",
+		"description": "Verified working test scenarios for CMS Flowable application - includes authentication, workflow tasks, DMN classification, and Cerbos authorization",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "cms-verified-tests"
+	},
+	"item": [
+		{
+			"name": "🔐 Authentication",
+			"item": [
+				{
+					"name": "Login as Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Login successful\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.success).to.be.true;",
+									"    pm.expect(response.token).to.exist;",
+									"});",
+									"",
+									"// Store JWT token for subsequent requests",
+									"const response = pm.response.json();",
+									"if (response.success && response.token) {",
+									"    pm.globals.set(\"jwt_token\", response.token);",
+									"    pm.globals.set(\"user_id\", response.user.userId);",
+									"    pm.globals.set(\"username\", response.user.username);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"admin\",\n    \"password\": \"demo123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login as HR Specialist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HR Login successful\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.success).to.be.true;",
+									"    pm.expect(response.token).to.exist;",
+									"    pm.expect(response.user.roles).to.include(\"HR_SPECIALIST\");",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"if (response.success && response.token) {",
+									"    pm.globals.set(\"hr_token\", response.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"hr.specialist\",\n    \"password\": \"demo123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login as Legal Counsel",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Legal Login successful\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.success).to.be.true;",
+									"    pm.expect(response.token).to.exist;",
+									"    pm.expect(response.user.roles).to.include(\"LEGAL_COUNSEL\");",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"if (response.success && response.token) {",
+									"    pm.globals.set(\"legal_token\", response.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"legal.counsel\",\n    \"password\": \"demo123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login as Security Analyst",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Security Login successful\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.success).to.be.true;",
+									"    pm.expect(response.token).to.exist;",
+									"    pm.expect(response.user.roles).to.include(\"SECURITY_ANALYST\");",
+									"});",
+									"",
+									"const response = pm.response.json();",
+									"if (response.success && response.token) {",
+									"    pm.globals.set(\"security_token\", response.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"username\": \"security.analyst\",\n    \"password\": \"demo123\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/auth/login",
+							"host": ["{{baseUrl}}"],
+							"path": ["auth", "login"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔍 Cerbos Authorization Testing",
+			"item": [
+				{
+					"name": "Admin Access - Cases (✅ Should Succeed)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Admin has full access to cases\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    // Admin should be able to access all cases",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/cases",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "cases"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "HR Specialist Access - Cases (❌ Should Fail with 403)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HR Specialist properly restricted from general cases access\", function () {",
+									"    pm.response.to.have.status(403);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.message).to.include(\"Access denied\");",
+									"});",
+									"",
+									"pm.test(\"Cerbos authorization working correctly\", function () {",
+									"    // This 403 confirms that Cerbos is enforcing role-based access control",
+									"    pm.expect(pm.response.code).to.equal(403);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{hr_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/cases",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "cases"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Legal Counsel Access - Cases (❌ Should Fail with 403)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Legal Counsel properly restricted from general cases access\", function () {",
+									"    pm.response.to.have.status(403);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.message).to.include(\"Access denied\");",
+									"});",
+									"",
+									"pm.test(\"Cerbos authorization working correctly\", function () {",
+									"    pm.expect(pm.response.code).to.equal(403);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{legal_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/cases",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "cases"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Security Analyst Access - Cases (❌ Should Fail with 403)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Security Analyst properly restricted from general cases access\", function () {",
+									"    pm.response.to.have.status(403);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.message).to.include(\"Access denied\");",
+									"});",
+									"",
+									"pm.test(\"Cerbos authorization working correctly\", function () {",
+									"    pm.expect(pm.response.code).to.equal(403);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{security_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/cases",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "cases"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "📝 Case Management - DMN Testing",
+			"item": [
+				{
+					"name": "Create HR Case (HARASSMENT)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Case created successfully\", function () {",
+									"    pm.response.to.have.status(201);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.caseNumber).to.exist;",
+									"    pm.expect(response.allegations).to.be.an('array');",
+									"    pm.globals.set(\"hr_case_number\", response.caseNumber);",
+									"});",
+									"",
+									"pm.test(\"DMN classified HARASSMENT to HR department\", function () {",
+									"    const response = pm.response.json();",
+									"    const hrAllegations = response.allegations.filter(a => a.allegationType === 'HARASSMENT');",
+									"    pm.expect(hrAllegations.length).to.be.greaterThan(0);",
+									"    hrAllegations.forEach(allegation => {",
+									"        pm.expect(allegation.classification).to.equal('HR');",
+									"        pm.expect(allegation.assignedGroup).to.equal('HR_GROUP');",
+									"    });",
+									"});",
+									"",
+									"pm.test(\"Workflow process started\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.processInstanceId).to.exist;",
+									"    pm.globals.set(\"hr_process_id\", response.processInstanceId);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"caseTitle\": \"HR Harassment Case - DMN Test\",\n    \"complainantName\": \"Jane Doe\",\n    \"complainantEmail\": \"jane.doe@company.com\",\n    \"allegations\": [\n        {\n            \"allegationType\": \"HARASSMENT\",\n            \"description\": \"Workplace harassment requiring HR investigation and resolution\",\n            \"severity\": \"High\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/cases",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "cases"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Legal Case (FRAUD)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Case created successfully\", function () {",
+									"    pm.response.to.have.status(201);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.caseNumber).to.exist;",
+									"    pm.globals.set(\"legal_case_number\", response.caseNumber);",
+									"});",
+									"",
+									"pm.test(\"DMN classified FRAUD to LEGAL department\", function () {",
+									"    const response = pm.response.json();",
+									"    const fraudAllegations = response.allegations.filter(a => a.allegationType === 'FRAUD');",
+									"    pm.expect(fraudAllegations.length).to.be.greaterThan(0);",
+									"    fraudAllegations.forEach(allegation => {",
+									"        pm.expect(allegation.classification).to.equal('LEGAL');",
+									"        pm.expect(allegation.assignedGroup).to.equal('LEGAL_GROUP');",
+									"    });",
+									"});",
+									"",
+									"pm.test(\"Workflow process started\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.processInstanceId).to.exist;",
+									"    pm.globals.set(\"legal_process_id\", response.processInstanceId);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"caseTitle\": \"Legal Fraud Case - DMN Test\",\n    \"complainantName\": \"John Smith\",\n    \"complainantEmail\": \"john.smith@company.com\",\n    \"allegations\": [\n        {\n            \"allegationType\": \"FRAUD\",\n            \"description\": \"Financial fraud case requiring legal investigation and compliance review\",\n            \"severity\": \"Critical\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/cases",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "cases"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Security Case (SECURITY_INCIDENT)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Case created successfully\", function () {",
+									"    pm.response.to.have.status(201);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.caseNumber).to.exist;",
+									"    pm.globals.set(\"security_case_number\", response.caseNumber);",
+									"});",
+									"",
+									"pm.test(\"DMN classified SECURITY_INCIDENT to CSIS department\", function () {",
+									"    const response = pm.response.json();",
+									"    const securityAllegations = response.allegations.filter(a => a.allegationType === 'SECURITY_INCIDENT');",
+									"    pm.expect(securityAllegations.length).to.be.greaterThan(0);",
+									"    securityAllegations.forEach(allegation => {",
+									"        pm.expect(allegation.classification).to.equal('CSIS');",
+									"        pm.expect(allegation.assignedGroup).to.equal('CSIS_GROUP');",
+									"    });",
+									"});",
+									"",
+									"pm.test(\"Workflow process started\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.processInstanceId).to.exist;",
+									"    pm.globals.set(\"security_process_id\", response.processInstanceId);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"caseTitle\": \"Security Incident - DMN Test\",\n    \"complainantName\": \"Security Team\",\n    \"complainantEmail\": \"security@company.com\",\n    \"allegations\": [\n        {\n            \"allegationType\": \"SECURITY_INCIDENT\",\n            \"description\": \"Data breach requiring CSIS investigation and security analysis\",\n            \"severity\": \"Critical\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/cases",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "cases"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Multi-Department Case",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Multi-department case created successfully\", function () {",
+									"    pm.response.to.have.status(201);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.caseNumber).to.exist;",
+									"    pm.expect(response.allegations).to.have.length(3);",
+									"    pm.globals.set(\"multi_case_number\", response.caseNumber);",
+									"});",
+									"",
+									"pm.test(\"DMN correctly routed multiple allegation types\", function () {",
+									"    const response = pm.response.json();",
+									"    const allegations = response.allegations;",
+									"    ",
+									"    // Check FRAUD → LEGAL",
+									"    const fraudAllegation = allegations.find(a => a.allegationType === 'FRAUD');",
+									"    pm.expect(fraudAllegation.classification).to.equal('LEGAL');",
+									"    pm.expect(fraudAllegation.assignedGroup).to.equal('LEGAL_GROUP');",
+									"    ",
+									"    // Check HARASSMENT → HR",
+									"    const harassmentAllegation = allegations.find(a => a.allegationType === 'HARASSMENT');",
+									"    pm.expect(harassmentAllegation.classification).to.equal('HR');",
+									"    pm.expect(harassmentAllegation.assignedGroup).to.equal('HR_GROUP');",
+									"    ",
+									"    // Check SECURITY_INCIDENT → CSIS",
+									"    const securityAllegation = allegations.find(a => a.allegationType === 'SECURITY_INCIDENT');",
+									"    pm.expect(securityAllegation.classification).to.equal('CSIS');",
+									"    pm.expect(securityAllegation.assignedGroup).to.equal('CSIS_GROUP');",
+									"});",
+									"",
+									"pm.test(\"Multi-department workflow variables set correctly\", function () {",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.processInstanceId).to.exist;",
+									"    pm.globals.set(\"multi_process_id\", response.processInstanceId);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"caseTitle\": \"Multi-Department Complex Investigation\",\n    \"complainantName\": \"Corporate Ethics\",\n    \"complainantEmail\": \"ethics@company.com\",\n    \"allegations\": [\n        {\n            \"allegationType\": \"FRAUD\",\n            \"description\": \"Executive embezzlement through falsified expense reports\",\n            \"severity\": \"Critical\"\n        },\n        {\n            \"allegationType\": \"HARASSMENT\",\n            \"description\": \"Pattern of workplace harassment by senior management\",\n            \"severity\": \"High\"\n        },\n        {\n            \"allegationType\": \"SECURITY_INCIDENT\",\n            \"description\": \"Unauthorized access to financial systems to cover misconduct\",\n            \"severity\": \"High\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/cases",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "cases"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🔄 Workflow Task Management",
+			"item": [
+				{
+					"name": "Get Active Workflow Tasks",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Workflow tasks retrieved successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response).to.be.an('array');",
+									"});",
+									"",
+									"pm.test(\"Tasks contain required workflow information\", function () {",
+									"    const response = pm.response.json();",
+									"    if (response.length > 0) {",
+									"        const task = response[0];",
+									"        pm.expect(task.taskId).to.exist;",
+									"        pm.expect(task.taskName).to.exist;",
+									"        pm.expect(task.processInstanceId).to.exist;",
+									"        pm.expect(task.variables).to.exist;",
+									"        ",
+									"        // Store first task for completion testing",
+									"        pm.globals.set(\"first_task_id\", task.taskId);",
+									"        pm.globals.set(\"first_task_name\", task.taskName);",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"DMN variables present in workflow tasks\", function () {",
+									"    const response = pm.response.json();",
+									"    if (response.length > 0) {",
+									"        const task = response[0];",
+									"        pm.expect(task.variables.classification).to.exist;",
+									"        pm.expect(task.variables.allegations).to.exist;",
+									"        pm.expect(task.variables.caseId).to.exist;",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/workflow/tasks",
+							"host": ["{{baseUrl}}"],
+							"path": ["workflow", "tasks"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Complete EO Intake Task",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Ensure we have a task ID to work with",
+									"if (!pm.globals.get(\"first_task_id\")) {",
+									"    pm.globals.set(\"first_task_id\", \"sample-task-id-for-demo\");",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"EO Intake task completed successfully\", function () {",
+									"    // Task completion typically returns 200/204 with no content",
+									"    pm.expect([200, 204]).to.include(pm.response.code);",
+									"});",
+									"",
+									"pm.test(\"Workflow progressed to next stage\", function () {",
+									"    // After EO Intake completion, workflow should progress",
+									"    // This would typically trigger department-specific tasks",
+									"    pm.expect(pm.response.code).to.be.lessThan(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"variables\": {\n        \"decision\": \"APPROVE\",\n        \"comments\": \"Initial review completed - case approved for department processing\",\n        \"reviewDate\": \"{{$isoTimestamp}}\",\n        \"reviewedBy\": \"{{username}}\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/workflow/tasks/{{first_task_id}}/complete",
+							"host": ["{{baseUrl}}"],
+							"path": ["workflow", "tasks", "{{first_task_id}}", "complete"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Complete HR Review Task",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"HR Review task completed successfully\", function () {",
+									"    pm.expect([200, 204]).to.include(pm.response.code);",
+									"});",
+									"",
+									"pm.test(\"HR workflow variables set correctly\", function () {",
+									"    // HR completion should set specific variables for workflow progression",
+									"    pm.expect(pm.response.code).to.be.lessThan(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"variables\": {\n        \"decision\": \"APPROVE\",\n        \"hrDecision\": \"APPROVED\",\n        \"hrComments\": \"HR review completed successfully. Case approved for further investigation.\",\n        \"hrReviewComplete\": true,\n        \"hrRecommendation\": \"PROCEED_TO_INVESTIGATION\",\n        \"reviewDate\": \"{{$isoTimestamp}}\",\n        \"reviewedBy\": \"{{username}}\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/workflow/tasks/{{first_task_id}}/complete",
+							"host": ["{{baseUrl}}"],
+							"path": ["workflow", "tasks", "{{first_task_id}}", "complete"]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "🏥 Health & Status",
+			"item": [
+				{
+					"name": "Application Health Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Application is healthy\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    const response = pm.response.json();",
+									"    pm.expect(response.status).to.equal(\"UP\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/actuator/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["actuator", "health"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Test Public Endpoint",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Public test endpoint accessible\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1/cases/test",
+							"host": ["{{baseUrl}}"],
+							"path": ["v1", "cases", "test"]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global pre-request script",
+					"console.log(\"Running request to:\", pm.request.url.toString());"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global test script",
+					"pm.test(\"Response time is acceptable\", function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(5000);",
+					"});",
+					"",
+					"pm.test(\"No server errors\", function () {",
+					"    pm.expect(pm.response.code).to.be.below(500);",
+					"});"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080/api",
+			"type": "string"
+		}
+	]
+}

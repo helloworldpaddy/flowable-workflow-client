@@ -1,0 +1,28 @@
+variables:
+  caseId:
+    type: STRING
+  status: # Maps to Flowable 'caseStatus'
+    type: STRING
+  relevantDepartments: # Maps to Flowable 'relevantDepartments' (list from DMN aggregation)
+    type: LIST
+    ofType: STRING
+  casePriority: # Maps to Flowable 'casePriority'
+    type: STRING
+  ipApproved: # Maps to Flowable 'ipApproved'
+    type: BOOLEAN
+  roiApproved: # Maps to Flowable 'roiApproved'
+    type: BOOLEAN
+  allegationsSubstantiated: # Maps to Flowable 'allegationsSubstantiated'
+    type: BOOLEAN
+  isArogCase: # Maps to Flowable 'isArogCase'
+    type: BOOLEAN
+  caseApprovedForClosure: # Maps to Flowable 'caseApprovedForClosure'
+    type: BOOLEAN
+  assignedUsers: # List of user IDs explicitly assigned to this case
+    type: LIST
+    ofType: STRING
+    default: []
+  currentTaskGroup: # The Flowable candidate group for the active user task
+    type: STRING
+  submittedBy: # User ID who submitted the complaint
+    type: STRING

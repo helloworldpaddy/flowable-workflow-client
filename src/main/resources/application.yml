@@ -1,10 +1,10 @@
-# Enable Spring Boot's debug mode for detailed auto-configuration reports
-debug: true
+# Debug mode disabled for production
+debug: false
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}
   servlet:
-    context-path: /api
+    context-path: ${SERVER_CONTEXT_PATH:/api}
   tomcat:
     additional-tld-skip-patterns: "*.jar"
     apr:
@@ -24,7 +24,9 @@ spring:
 
   # Single DataSource for both CMS and Flowable
   datasource:
-
+    url: ${DB_URL:jdbc:postgresql://ep-wispy-haze-a5xy9c41-pooler.us-east-2.aws.neon.tech/workflow?sslmode=require&currentSchema=cms_flowable_workflow}
+    username: ${DB_USERNAME:wf_owner}
+    password: ${DB_PASSWORD:npg_7hrdeDKf6WyC}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 20
@@ -45,7 +47,7 @@ spring:
     show-sql: false # You can set this to true temporarily if you want to see SQL queries
     properties:
       hibernate:
-        default_schema: cms_flowable_workflow
+        default_schema: ${DB_SCHEMA:cms_flowable_workflow}
         format_sql: true
         jdbc:
           time_zone: UTC
@@ -60,7 +62,7 @@ spring:
   # Liquibase Configuration
   liquibase:
     change-log: classpath:db/changelog/db.changelog-master.xml
-    default-schema: cms_flowable_workflow
+    default-schema: ${DB_SCHEMA:cms_flowable_workflow}
     enabled: true
 
 # Flowable Configuration
@@ -68,8 +70,9 @@ flowable:
   # Database Configuration
   database-schema-update: true # This should be true for Flowable to create/update its own tables
   database-type: postgres
-  database-schema: cms_flowable_workflow
+  database-schema: ${DB_SCHEMA:cms_flowable_workflow}
   check-process-definitions: false
+  deployment-mode: default
   
   # Process Engine Configuration (BPMN) - Enabled by default if starter is present
   process:
@@ -81,6 +84,7 @@ flowable:
     resource-suffixes:
       - .bpmn
       - .bpmn20.xml
+    deployment-mode: default
     
   # CMMN Engine Configuration - DISABLED
   cmmn:
@@ -94,13 +98,14 @@ flowable:
     
   # DMN Engine Configuration - ENABLED
   dmn:
-    enabled: true # Keep as true
+    enabled: true # Re-enabled with KIE dependencies
     resource-location: classpath*:/dmn/
     resource-suffixes:
       - .dmn
       - .dmn11  
       - .dmn.xml
     strict-mode: false
+    deployment-mode: single-resource
     
   # Form Engine Configuration - DISABLED
   form:
@@ -135,7 +140,7 @@ flowable:
       enable-cors: true
       cors:
         enabled: true
-        allowed-origins: "http://localhost:3000,http://localhost:3001"
+        allowed-origins: "${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:3001}"
         allowed-methods: GET,POST,PUT,DELETE,OPTIONS
         allowed-headers: "*"
         allow-credentials: true
@@ -143,23 +148,27 @@ flowable:
 
 # JWT Configuration
 jwt:
-  secret: ${JWT_SECRET:myVerySecretKeyForCMSApplicationThatShouldBeChangedInProduction}
-  expiration: 86400000 # 24 hours
-  refresh-expiration: 604800000 # 7 days
+  secret: ${JWT_SECRET:mySecretKey12345678901234567890123456789012345678901234567890}
+  expiration: ${JWT_EXPIRATION:86400000} # 24 hours
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000} # 7 days
 
-# Logging Configuration
+# Cerbos Configuration
+cerbos:
+  host: ${CERBOS_HOST:localhost}
+  port: ${CERBOS_PORT:3593}
+  tls:
+    enabled: ${CERBOS_TLS_ENABLED:false}
+  fallback:
+    enabled: ${CERBOS_FALLBACK_ENABLED:true}
+
+# Logging Configuration - Handled by logback-spring.xml
+# All logs go to logs/cms-flowable.log with rolling policy
+# Environment variables for log levels:
+# APP_LOG_LEVEL: Application log level (default: INFO)
+# FLOWABLE_LOG_LEVEL: Flowable engine log level (default: INFO) 
+# SQL_LOG_LEVEL: SQL query log level (default: WARN)
 logging:
-  level:
-    root: DEBUG # Set root logging level to DEBUG
-    org.flowable: DEBUG # Set Flowable specific logging to DEBUG
-    org.flowable.engine.impl.persistence: DEBUG
-    org.springframework.security: INFO
-    com.cms.flowable: DEBUG
-  pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
-    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
-  file:
-    name: logs/cms-flowable.log
+  config: classpath:logback-spring.xml
 
 # Management and Monitoring
 management:
@@ -177,24 +186,24 @@ management:
 # Application Specific Configuration
 cms:
   database:
-    schema: cms_flowable_workflow
+    schema: ${DB_SCHEMA:cms_flowable_workflow}
   case:
-    number-prefix: "CMS"
-    auto-assignment: true
-    max-allegations-per-case: 10
+    number-prefix: "${CASE_NUMBER_PREFIX:CMS}"
+    auto-assignment: ${CASE_AUTO_ASSIGNMENT:true}
+    max-allegations-per-case: ${CASE_MAX_ALLEGATIONS:10}
   notification:
     email:
-      enabled: false
+      enabled: ${EMAIL_ENABLED:false}
       smtp:
-        host: localhost
-        port: 587
+        host: ${EMAIL_SMTP_HOST:localhost}
+        port: ${EMAIL_SMTP_PORT:587}
     sms:
-      enabled: false
+      enabled: ${SMS_ENABLED:false}
   file:
     upload:
-      max-size: 10MB
-      allowed-types: pdf,doc,docx,txt,jpg,png
-      storage-path: /app/uploads
+      max-size: ${FILE_UPLOAD_MAX_SIZE:10MB}
+      allowed-types: ${FILE_UPLOAD_ALLOWED_TYPES:pdf,doc,docx,txt,jpg,png}
+      storage-path: ${FILE_UPLOAD_STORAGE_PATH:/app/uploads}
   deployment:
     environment: ${DEPLOYMENT_ENV:development}
     base-url: ${BASE_URL:http://localhost}

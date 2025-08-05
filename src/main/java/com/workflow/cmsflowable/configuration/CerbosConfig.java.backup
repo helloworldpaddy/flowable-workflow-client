@@ -1,0 +1,101 @@
+package com.workflow.cmsflowable.configuration;
+
+import dev.cerbos.sdk.CerbosClientBuilder;
+import dev.cerbos.sdk.CerbosBlockingClient;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+@Configuration
+public class CerbosConfig {
+
+    @Value("${cerbos.host:localhost}")
+    private String cerbosHost;
+
+    @Value("${cerbos.port:3593}")
+    private int cerbosPort;
+
+    @Value("${cerbos.tls.enabled:false}")
+    private boolean tlsEnabled;
+
+    @Value("${cerbos.fallback.enabled:true}")
+    private boolean fallbackEnabled;
+
+    @PostConstruct
+    public void validateConfiguration() {
+        if (cerbosHost == null || cerbosHost.trim().isEmpty()) {
+            throw new IllegalArgumentException("Cerbos host cannot be null or empty");
+        }
+        if (cerbosPort < 1 || cerbosPort > 65535) {
+            throw new IllegalArgumentException("Cerbos port must be between 1 and 65535, got: " + cerbosPort);
+        }
+        log.info("Cerbos configuration validated - Host: {}, Port: {}, TLS: {}", cerbosHost, cerbosPort, tlsEnabled);
+    }
+
+    @Bean
+    public CerbosBlockingClient cerbosClient() {
+        String endpoint = cerbosHost + ":" + cerbosPort;
+        log.info("Configuring Cerbos client for endpoint: {}", endpoint);
+
+        try {
+            CerbosClientBuilder builder = new CerbosClientBuilder(endpoint);
+
+            if (tlsEnabled) {
+                log.info("TLS enabled for Cerbos client");
+                // TLS configuration for production environments
+            } else {
+                log.info("Using plaintext connection for Cerbos client");
+                builder.withPlaintext();
+            }
+
+            CerbosBlockingClient client = builder.buildBlockingClient();
+            log.info("Cerbos client configured successfully");
+            return client;
+            
+        } catch (Exception e) {
+            log.error("Failed to configure Cerbos client: {}", e.getMessage());
+
+            if (fallbackEnabled) {
+                log.warn("Fallback enabled - using stub implementation for development");
+                return createStubClient();
+            } else {
+                throw new RuntimeException("Failed to configure Cerbos client: " + e.getMessage(), e);
+            }
+        }
+    }
+
+    private void validateConnection(CerbosBlockingClient client) {
+        try {
+            // Perform basic connection validation
+            // Since Cerbos SDK doesn't have a direct health check method,
+            // we'll attempt a simple operation to verify connectivity
+            log.info("Validating Cerbos client connection...");
+            
+            // TODO: Replace with actual health check when SDK provides one
+            // For now, we validate that the client was created successfully
+            // and the endpoint is reachable by checking client state
+            if (client == null) {
+                throw new IllegalStateException("Cerbos client is null");
+            }
+            
+            // Additional validation could include:
+            // - Network connectivity test to the endpoint
+            // - Basic permission check with dummy data
+            // - SDK version compatibility check
+            
+            log.info("Cerbos client connection validation completed successfully");
+        } catch (Exception e) {
+            log.error("Connection validation failed: {}", e.getMessage());
+            throw new RuntimeException("Cerbos connection validation failed", e);
+        }
+    }
+
+    private CerbosBlockingClient createStubClient() {
+        log.warn("Creating stub Cerbos client for development - permissions will use fallback logic");
+        // Return null and handle in permission evaluator
+        return null;
+    }
+}

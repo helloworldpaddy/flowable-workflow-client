@@ -33,18 +33,18 @@ public class WorkflowController {
     public ResponseEntity<Map<String, Object>> startProcess(
             @PathVariable String processKey,
             @RequestBody(required = false) Map<String, Object> variables) {
-        
+
         if (variables == null) {
             variables = new HashMap<>();
         }
-        
+
         ProcessInstance processInstance = runtimeService.startProcessInstanceByKey(processKey, variables);
-        
+
         Map<String, Object> response = new HashMap<>();
         response.put("processInstanceId", processInstance.getId());
         response.put("processDefinitionId", processInstance.getProcessDefinitionId());
         response.put("businessKey", processInstance.getBusinessKey());
-        
+
         return ResponseEntity.ok(response);
     }
 
@@ -53,9 +53,9 @@ public class WorkflowController {
     public ResponseEntity<List<WorkflowTaskResponse>> getTasks(
             @Parameter(description = "Filter by assignee") @RequestParam(required = false) String assignee,
             @Parameter(description = "Filter by candidate group") @RequestParam(required = false) String candidateGroup) {
-        
+
         List<Task> tasks;
-        
+
         if (assignee != null && !assignee.isEmpty()) {
             tasks = taskService.createTaskQuery().taskAssignee(assignee).list();
         } else if (candidateGroup != null && !candidateGroup.isEmpty()) {
@@ -63,14 +63,14 @@ public class WorkflowController {
         } else {
             tasks = taskService.createTaskQuery().list();
         }
-        
+
         List<WorkflowTaskResponse> taskResponses = tasks.stream()
                 .map(this::convertToTaskResponse)
                 .collect(Collectors.toList());
-        
+
         return ResponseEntity.ok(taskResponses);
     }
-    
+
     @GetMapping("/my-tasks")
     @Operation(summary = "Get my tasks", description = "Get tasks assigned to the current user based on their role")
     public ResponseEntity<List<WorkflowTaskResponse>> getMyTasks(Authentication authentication) {
@@ -78,12 +78,17 @@ public class WorkflowController {
             if (authentication == null) {
                 return ResponseEntity.status(401).build();
             }
-            
+
             String username = authentication.getName();
             String userRole = getUserRoleFromAuthentication(authentication);
-            
+
+            // Debug logging
+            System.out.println("🔍 My tasks request from user: " + username);
+            System.out.println("🔍 User role: " + userRole);
+            System.out.println("🔍 User authorities: " + authentication.getAuthorities());
+
             List<Task> tasks;
-            
+
             // Map user roles to candidate groups
             switch (userRole.toUpperCase()) {
                 case "IU_MANAGER":
@@ -109,17 +114,21 @@ public class WorkflowController {
                     // If no specific role mapping, get tasks assigned to user
                     tasks = taskService.createTaskQuery().taskAssignee(username).list();
             }
-            
+
             List<WorkflowTaskResponse> taskResponses = tasks.stream()
                     .map(this::convertToTaskResponse)
                     .collect(Collectors.toList());
-            
+
+            System.out.println("✅ Returning " + taskResponses.size() + " tasks for user: " + username);
+
             return ResponseEntity.ok(taskResponses);
         } catch (Exception e) {
+            System.err.println("❌ Error fetching tasks for user " + authentication.getName() + ": " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.internalServerError().build();
         }
     }
-    
+
     @GetMapping("/tasks/{taskId}")
     @Operation(summary = "Get task details", description = "Get detailed information about a specific task")
     public ResponseEntity<WorkflowTaskResponse> getTaskDetails(
@@ -129,33 +138,33 @@ public class WorkflowController {
             if (task == null) {
                 return ResponseEntity.notFound().build();
             }
-            
+
             WorkflowTaskResponse taskResponse = convertToTaskResponse(task);
             return ResponseEntity.ok(taskResponse);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
     }
-    
+
     @GetMapping("/cases/{caseId}/tasks")
     @Operation(summary = "Get tasks for case", description = "Get all tasks associated with a specific case")
     public ResponseEntity<List<WorkflowTaskResponse>> getTasksForCase(
             @Parameter(description = "Case ID") @PathVariable String caseId) {
         try {
             List<Task> tasks = taskService.createTaskQuery()
-                .processVariableValueEquals("caseId", caseId)
-                .list();
-                
+                    .processVariableValueEquals("caseId", caseId)
+                    .list();
+
             List<WorkflowTaskResponse> taskResponses = tasks.stream()
                     .map(this::convertToTaskResponse)
                     .collect(Collectors.toList());
-            
+
             return ResponseEntity.ok(taskResponses);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().build();
         }
     }
-    
+
     @PostMapping("/tasks/{taskId}/assign")
     @Operation(summary = "Assign task", description = "Assign a task to a specific user")
     public ResponseEntity<String> assignTask(
@@ -166,14 +175,14 @@ public class WorkflowController {
             if (task == null) {
                 return ResponseEntity.notFound().build();
             }
-            
+
             taskService.setAssignee(taskId, userId);
             return ResponseEntity.ok("Task assigned successfully to user: " + userId);
         } catch (Exception e) {
             return ResponseEntity.internalServerError().body("Failed to assign task: " + e.getMessage());
         }
     }
-    
+
     private WorkflowTaskResponse convertToTaskResponse(Task task) {
         WorkflowTaskResponse response = new WorkflowTaskResponse();
         response.setTaskId(task.getId());
@@ -186,11 +195,11 @@ public class WorkflowController {
         response.setPriority(task.getPriority());
         response.setDescription(task.getDescription());
         response.setFormKey(task.getFormKey());
-        
+
         // Get process variables
         Map<String, Object> variables = taskService.getVariables(task.getId());
         response.setVariables(variables);
-        
+
         return response;
     }
 
@@ -198,11 +207,11 @@ public class WorkflowController {
     public ResponseEntity<String> completeTask(
             @PathVariable String taskId,
             @RequestBody(required = false) Map<String, Object> variables) {
-        
+
         if (variables == null) {
             variables = new HashMap<>();
         }
-        
+
         taskService.complete(taskId, variables);
         return ResponseEntity.ok("Task completed successfully");
     }
@@ -212,7 +221,7 @@ public class WorkflowController {
         ProcessInstance processInstance = runtimeService.createProcessInstanceQuery()
                 .processInstanceId(processInstanceId)
                 .singleResult();
-        
+
         if (processInstance != null) {
             return ResponseEntity.ok(processInstance);
         } else {
@@ -225,16 +234,16 @@ public class WorkflowController {
         List<ProcessInstance> processInstances = runtimeService.createProcessInstanceQuery().list();
         return ResponseEntity.ok(processInstances);
     }
-    
+
     /**
      * Helper method to extract user role from authentication
      */
     private String getUserRoleFromAuthentication(Authentication authentication) {
         if (authentication != null && authentication.getAuthorities() != null) {
             return authentication.getAuthorities().stream()
-                .findFirst()
-                .map(auth -> auth.getAuthority().replace("ROLE_", ""))
-                .orElse("USER");
+                    .findFirst()
+                    .map(auth -> auth.getAuthority().replace("ROLE_", ""))
+                    .orElse("USER");
         }
         return "USER";
     }

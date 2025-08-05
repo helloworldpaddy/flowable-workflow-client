@@ -20,21 +20,21 @@
         </inputExpression>
       </input>
 
-      <!-- Input: Severity Level -->
+      <!-- Input: Severity Level (Normalized to uppercase) -->
       <input id="InputClause_Severity" label="Severity">
         <inputExpression id="LiteralExpression_Severity" typeRef="string">
-          <text>severity</text>
+          <text>upper(severity)</text>
         </inputExpression>
       </input>
 
-      <!-- Output: Classification -->
+      <!-- Output: Classification (e.g., HR, LEGAL, CSIS) -->
       <output id="OutputClause_Classification" label="Classification" name="classification" typeRef="string">
         <outputValues id="UnaryTests_Classification">
           <text>"HR","LEGAL","CSIS"</text>
         </outputValues>
       </output>
 
-      <!-- Output: Assigned Group -->
+      <!-- Output: Assigned Group (Matches BPMN candidateGroups) -->
       <output id="OutputClause_AssignedGroup" label="Assigned Group" name="assignedGroup" typeRef="string" />
 
       <!-- Output: Priority Level -->
@@ -50,22 +50,40 @@
           <text>"Sexual Harassment"</text>
         </inputEntry>
         <inputEntry id="UnaryTests_HR_Sexual_Severity">
-          <text>"HIGH", "CRITICAL", "High", "Critical"</text>
+          <text>"HIGH", "CRITICAL"</text>
         </inputEntry>
         <outputEntry id="LiteralExpression_HR_Sexual_Classification">
           <text>"HR"</text>
         </outputEntry>
         <outputEntry id="LiteralExpression_HR_Sexual_Group">
-          <text>"HR_SPECIALIST"</text>
+          <text>"HR_GROUP"</text>
         </outputEntry>
         <outputEntry id="LiteralExpression_HR_Sexual_Priority">
           <text>"HIGH"</text>
         </outputEntry>
       </rule>
 
+      <rule id="DecisionRule_HR_Harassment_Exact">
+        <inputEntry id="UnaryTests_HR_Harassment_Exact_Type">
+          <text>"HARASSMENT"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_HR_Harassment_Exact_Severity">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_HR_Harassment_Exact_Classification">
+          <text>"HR"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_HR_Harassment_Exact_Group">
+          <text>"HR_GROUP"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_HR_Harassment_Exact_Priority">
+          <text>"MEDIUM"</text>
+        </outputEntry>
+      </rule>
+
       <rule id="DecisionRule_HR_Harassment_General">
         <inputEntry id="UnaryTests_HR_Harassment_Type">
-          <text>"Harassment", "Workplace Harassment", "Discrimination"</text>
+          <text>"DISCRIMINATION"</text>
         </inputEntry>
         <inputEntry id="UnaryTests_HR_Harassment_Severity">
           <text>-</text>
@@ -74,10 +92,10 @@
           <text>"HR"</text>
         </outputEntry>
         <outputEntry id="LiteralExpression_HR_Harassment_Group">
-          <text>"HR_SPECIALIST"</text>
+          <text>"HR_GROUP"</text>
         </outputEntry>
         <outputEntry id="LiteralExpression_HR_Harassment_Priority">
-          <text>"HIGH"</text>
+          <text>"MEDIUM"</text>
         </outputEntry>
       </rule>
 
@@ -87,22 +105,40 @@
           <text>"Financial Fraud"</text>
         </inputEntry>
         <inputEntry id="UnaryTests_Legal_Financial_Severity">
-          <text>"CRITICAL", "HIGH", "Critical", "High"</text>
+          <text>"CRITICAL", "HIGH"</text>
         </inputEntry>
         <outputEntry id="LiteralExpression_Legal_Financial_Classification">
           <text>"LEGAL"</text>
         </outputEntry>
         <outputEntry id="LiteralExpression_Legal_Financial_Group">
-          <text>"LEGAL_COUNSEL"</text>
+          <text>"LEGAL_GROUP"</text>
         </outputEntry>
         <outputEntry id="LiteralExpression_Legal_Financial_Priority">
           <text>"CRITICAL"</text>
         </outputEntry>
       </rule>
 
+      <rule id="DecisionRule_Legal_Fraud_Exact">
+        <inputEntry id="UnaryTests_Legal_Fraud_Exact_Type">
+          <text>"FRAUD"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Legal_Fraud_Exact_Severity">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_Legal_Fraud_Exact_Classification">
+          <text>"LEGAL"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Legal_Fraud_Exact_Group">
+          <text>"LEGAL_GROUP"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Legal_Fraud_Exact_Priority">
+          <text>"HIGH"</text>
+        </outputEntry>
+      </rule>
+
       <rule id="DecisionRule_Legal_Fraud_General">
         <inputEntry id="UnaryTests_Legal_Fraud_Type">
-          <text>"Fraud", "Embezzlement", "Financial Misconduct"</text>
+          <text>"Fraud"</text>
         </inputEntry>
         <inputEntry id="UnaryTests_Legal_Fraud_Severity">
           <text>-</text>
@@ -111,10 +147,10 @@
           <text>"LEGAL"</text>
         </outputEntry>
         <outputEntry id="LiteralExpression_Legal_Fraud_Group">
-          <text>"LEGAL_COUNSEL"</text>
+          <text>"LEGAL_GROUP"</text>
         </outputEntry>
         <outputEntry id="LiteralExpression_Legal_Fraud_Priority">
-          <text>"CRITICAL"</text>
+          <text>"HIGH"</text>
         </outputEntry>
       </rule>
 
@@ -124,22 +160,40 @@
           <text>"Data Breach"</text>
         </inputEntry>
         <inputEntry id="UnaryTests_CSIS_Data_Severity">
-          <text>"CRITICAL", "HIGH", "Critical", "High"</text>
+          <text>"CRITICAL", "HIGH"</text>
         </inputEntry>
         <outputEntry id="LiteralExpression_CSIS_Data_Classification">
           <text>"CSIS"</text>
         </outputEntry>
         <outputEntry id="LiteralExpression_CSIS_Data_Group">
-          <text>"SECURITY_ANALYST"</text>
+          <text>"CSIS_GROUP"</text>
         </outputEntry>
         <outputEntry id="LiteralExpression_CSIS_Data_Priority">
           <text>"CRITICAL"</text>
         </outputEntry>
       </rule>
 
+      <rule id="DecisionRule_CSIS_Security_Exact">
+        <inputEntry id="UnaryTests_CSIS_Security_Exact_Type">
+          <text>"SECURITY_INCIDENT"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CSIS_Security_Exact_Severity">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_CSIS_Security_Exact_Classification">
+          <text>"CSIS"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_CSIS_Security_Exact_Group">
+          <text>"CSIS_GROUP"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_CSIS_Security_Exact_Priority">
+          <text>"HIGH"</text>
+        </outputEntry>
+      </rule>
+
       <rule id="DecisionRule_CSIS_Security_General">
         <inputEntry id="UnaryTests_CSIS_Security_Type">
-          <text>"Security Breach", "Information Security", "Cyber Security", "Data Loss"</text>
+          <text>"Security Breach"</text>
         </inputEntry>
         <inputEntry id="UnaryTests_CSIS_Security_Severity">
           <text>-</text>
@@ -148,10 +202,10 @@
           <text>"CSIS"</text>
         </outputEntry>
         <outputEntry id="LiteralExpression_CSIS_Security_Group">
-          <text>"SECURITY_ANALYST"</text>
+          <text>"CSIS_GROUP"</text>
         </outputEntry>
         <outputEntry id="LiteralExpression_CSIS_Security_Priority">
-          <text>"CRITICAL"</text>
+          <text>"HIGH"</text>
         </outputEntry>
       </rule>
 
@@ -167,7 +221,7 @@
           <text>"HR"</text>
         </outputEntry>
         <outputEntry id="LiteralExpression_Default_Group">
-          <text>"HR_SPECIALIST"</text>
+          <text>"HR_GROUP"</text>
         </outputEntry>
         <outputEntry id="LiteralExpression_Default_Priority">
           <text>"MEDIUM"</text>

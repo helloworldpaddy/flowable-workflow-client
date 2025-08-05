@@ -43,6 +43,13 @@ public class Department {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     
+    // Additional fields from frontend requirements
+    @Column(name = "department_region", length = 50)
+    private String departmentRegion;
+    
+    @Column(name = "department_function", length = 50)
+    private String departmentFunction;
+    
     // Constructors
     public Department() {}
     
@@ -93,4 +100,10 @@ public class Department {
     
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+    
+    public String getDepartmentRegion() { return departmentRegion; }
+    public void setDepartmentRegion(String departmentRegion) { this.departmentRegion = departmentRegion; }
+    
+    public String getDepartmentFunction() { return departmentFunction; }
+    public void setDepartmentFunction(String departmentFunction) { this.departmentFunction = departmentFunction; }
 }

@@ -1,0 +1,688 @@
+{
+	"info": {
+		"_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+		"name": "CMS Flowable API - Updated Collection",
+		"description": "Complete API collection for the updated CMS Flowable application with BPMN workflow Process_CMS_Workflow_Updated and DMN allegation-classification integration",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "12345678"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"item": [
+				{
+					"name": "Test Endpoint",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1/cases/test",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"cases",
+								"test"
+							]
+						},
+						"description": "Basic health check endpoint to verify API is running"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Deployment Management",
+			"item": [
+				{
+					"name": "Deploy All (BPMN + DMN)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/v1/deploy/all",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"deploy",
+								"all"
+							]
+						},
+						"description": "Deploy the updated BPMN process (Process_CMS_Workflow_Updated) and DMN decision table (allegation-classification) to Flowable engine"
+					},
+					"response": [
+						{
+							"name": "Successful Deployment",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/v1/deploy/all",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"deploy",
+										"all"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"success\": true,\n    \"deploymentId\": \"4df2093a-6744-11f0-9c27-325aff8b6f18\",\n    \"deploymentName\": \"CMS Workflow Deployment\",\n    \"message\": \"Successfully deployed BPMN and DMN files\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Check Deployment Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1/deploy/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"deploy",
+								"status"
+							]
+						},
+						"description": "Check if BPMN and DMN files are properly deployed"
+					},
+					"response": [
+						{
+							"name": "Deployment Status",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/v1/deploy/status",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"deploy",
+										"status"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"dmnDecisionCount\": 7,\n    \"processDeployed\": true,\n    \"processDefinitionCount\": 1,\n    \"dmnDeployed\": true\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Case Management",
+			"item": [
+				{
+					"name": "Create Simple Case",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Employee Harassment Complaint\",\n    \"description\": \"Formal complaint regarding inappropriate workplace behavior\",\n    \"complainantName\": \"Jane Smith\",\n    \"complainantEmail\": \"jane.smith@company.com\",\n    \"department\": \"HR\",\n    \"priority\": \"HIGH\",\n    \"allegations\": [\n        {\n            \"allegationType\": \"Harassment\",\n            \"severity\": \"HIGH\",\n            \"description\": \"Inappropriate comments and unwanted physical contact in the workplace\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/cases",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"cases"
+							]
+						},
+						"description": "Create a simple case with one harassment allegation. This will trigger the DMN decision table to route to HR department."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Multi-Department Case",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Complex Multi-Department Investigation\",\n    \"description\": \"Case involving multiple types of misconduct requiring cross-departmental coordination\",\n    \"complainantName\": \"John Manager\",\n    \"complainantEmail\": \"john.manager@company.com\",\n    \"department\": \"Legal\",\n    \"priority\": \"CRITICAL\",\n    \"allegations\": [\n        {\n            \"allegationType\": \"HARASSMENT\",\n            \"severity\": \"HIGH\",\n            \"description\": \"Sexual harassment allegations against senior management\"\n        },\n        {\n            \"allegationType\": \"DISCRIMINATION\",\n            \"severity\": \"MEDIUM\",\n            \"description\": \"Age discrimination in promotion decisions\"\n        },\n        {\n            \"allegationType\": \"FRAUD\",\n            \"severity\": \"HIGH\",\n            \"description\": \"Financial irregularities in expense reporting\"\n        },\n        {\n            \"allegationType\": \"SECURITY_BREACH\",\n            \"severity\": \"CRITICAL\",\n            \"description\": \"Unauthorized access to confidential employee data\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/cases",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"cases"
+							]
+						},
+						"description": "Create a complex case with multiple allegations that will trigger multi-department routing through DMN decision table (HR, Legal, CSIS)"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Multi-Department Endpoint",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Executive Level Investigation\",\n    \"description\": \"High-priority case involving C-level executive requiring immediate AROG review\",\n    \"complainantName\": \"Anonymous Whistleblower\",\n    \"complainantEmail\": \"anonymous@company.com\",\n    \"department\": \"Executive\",\n    \"priority\": \"CRITICAL\",\n    \"allegations\": [\n        {\n            \"allegationType\": \"HARASSMENT\",\n            \"severity\": \"CRITICAL\",\n            \"description\": \"Systematic harassment and retaliation against whistleblowers\"\n        },\n        {\n            \"allegationType\": \"FRAUD\",\n            \"severity\": \"CRITICAL\",\n            \"description\": \"Financial misconduct and embezzlement of company funds\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/cases/multi-department",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"cases",
+								"multi-department"
+							]
+						},
+						"description": "Specialized endpoint for creating cases that require multiple departments (minimum 2 allegations required)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Case by Case Number",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1/cases/{{caseNumber}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"cases",
+								"{{caseNumber}}"
+							]
+						},
+						"description": "Retrieve detailed information about a specific case including all allegations and DMN classification results"
+					},
+					"response": [
+						{
+							"name": "Case Details Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/v1/cases/CMS-2025-016",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"cases",
+										"CMS-2025-016"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"caseId\": \"CMS-2025-016\",\n    \"caseNumber\": \"CMS-2025-016\",\n    \"title\": \"Final E2E Test\",\n    \"description\": \"Complete end-to-end integration test\",\n    \"priority\": \"HIGH\",\n    \"status\": \"OPEN\",\n    \"complainantName\": \"Test Manager\",\n    \"complainantEmail\": \"manager@company.com\",\n    \"workflowInstanceKey\": 1445896135,\n    \"createdAt\": \"2025-07-22T14:40:30.900677\",\n    \"updatedAt\": \"2025-07-22T14:40:30.900681\",\n    \"createdBy\": null,\n    \"assignedTo\": null,\n    \"allegations\": [\n        {\n            \"allegationId\": \"b45f7fda-0c8d-4e7a-bec3-b5534af920f4\",\n            \"allegationType\": \"HARASSMENT\",\n            \"severity\": \"HIGH\",\n            \"description\": \"High-priority harassment case for testing\",\n            \"departmentClassification\": \"HR\",\n            \"assignedGroup\": \"HR_SPECIALIST\",\n            \"flowablePlanItemId\": \"7da0ea55-6744-11f0-9c27-325aff8b6f18\",\n            \"createdAt\": \"2025-07-22T14:40:30.985853\",\n            \"updatedAt\": \"2025-07-22T14:40:30.985855\"\n        },\n        {\n            \"allegationId\": \"d2d5e354-5d56-467b-a668-51c2d11380eb\",\n            \"allegationType\": \"DISCRIMINATION\",\n            \"severity\": \"MEDIUM\",\n            \"description\": \"Discrimination allegation requiring legal review\",\n            \"departmentClassification\": \"HR\",\n            \"assignedGroup\": \"HR_SPECIALIST\",\n            \"flowablePlanItemId\": \"7da0ea55-6744-11f0-9c27-325aff8b6f18\",\n            \"createdAt\": \"2025-07-22T14:40:30.926158\",\n            \"updatedAt\": \"2025-07-22T14:40:30.926162\"\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "Get All Cases",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1/cases?page=0&size=20&status=OPEN",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"cases"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "0",
+									"description": "Page number (0-based)"
+								},
+								{
+									"key": "size",
+									"value": "20",
+									"description": "Number of cases per page"
+								},
+								{
+									"key": "status",
+									"value": "OPEN",
+									"description": "Filter by case status (optional)"
+								}
+							]
+						},
+						"description": "Retrieve a paginated list of all cases with optional status filtering"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Workflow Status & Journey",
+			"item": [
+				{
+					"name": "Get Workflow Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1/cases/{{caseNumber}}/workflow-status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"cases",
+								"{{caseNumber}}",
+								"workflow-status"
+							]
+						},
+						"description": "Get the current workflow status and progress for a specific case, including process instance details and current variables"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Workflow Journey",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1/cases/{{caseNumber}}/journey",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"cases",
+								"{{caseNumber}}",
+								"journey"
+							]
+						},
+						"description": "Track the complete journey of a case through the workflow stages, showing completed and pending tasks"
+					},
+					"response": [
+						{
+							"name": "Workflow Journey Response",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{baseUrl}}/v1/cases/CMS-2025-016/journey",
+									"host": [
+										"{{baseUrl}}"
+									],
+									"path": [
+										"v1",
+										"cases",
+										"CMS-2025-016",
+										"journey"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [],
+							"cookie": [],
+							"body": "{\n    \"caseNumber\": \"CMS-2025-016\",\n    \"stages\": [\n        {\n            \"stage\": \"Intake\",\n            \"status\": \"completed\",\n            \"timestamp\": \"2025-07-22T14:40:30\",\n            \"assignedGroup\": \"INTAKE_ANALYST_GROUP\"\n        },\n        {\n            \"stage\": \"Classification\",\n            \"status\": \"completed\",\n            \"timestamp\": \"2025-07-22T14:40:31\",\n            \"dmnResult\": \"HR_ROUTING\"\n        },\n        {\n            \"stage\": \"HR Review\",\n            \"status\": \"in_progress\",\n            \"timestamp\": \"2025-07-22T14:40:32\",\n            \"assignedGroup\": \"HR_GROUP\"\n        },\n        {\n            \"stage\": \"Legal Review\",\n            \"status\": \"pending\"\n        },\n        {\n            \"stage\": \"CSIS Review\",\n            \"status\": \"pending\"\n        },\n        {\n            \"stage\": \"Investigation\",\n            \"status\": \"pending\"\n        },\n        {\n            \"stage\": \"AROG Review\",\n            \"status\": \"pending\"\n        },\n        {\n            \"stage\": \"Case Closure\",\n            \"status\": \"pending\"\n        }\n    ]\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "DMN Testing",
+			"item": [
+				{
+					"name": "Test Harassment Classification",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"DMN Test - Harassment\",\n    \"description\": \"Testing DMN classification for harassment allegations\",\n    \"complainantName\": \"DMN Tester\",\n    \"complainantEmail\": \"dmn.test@company.com\",\n    \"department\": \"HR\",\n    \"priority\": \"MEDIUM\",\n    \"allegations\": [\n        {\n            \"allegationType\": \"HARASSMENT\",\n            \"severity\": \"HIGH\",\n            \"description\": \"Testing DMN routing for harassment cases\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/cases",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"cases"
+							]
+						},
+						"description": "Test case to verify DMN decision table correctly classifies harassment allegations to HR department"
+					},
+					"response": []
+				},
+				{
+					"name": "Test Security Breach Classification",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"DMN Test - Security Breach\",\n    \"description\": \"Testing DMN classification for security breach allegations\",\n    \"complainantName\": \"Security Team\",\n    \"complainantEmail\": \"security@company.com\",\n    \"department\": \"IT\",\n    \"priority\": \"CRITICAL\",\n    \"allegations\": [\n        {\n            \"allegationType\": \"SECURITY_BREACH\",\n            \"severity\": \"CRITICAL\",\n            \"description\": \"Unauthorized access to classified systems\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/cases",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"cases"
+							]
+						},
+						"description": "Test case to verify DMN decision table correctly classifies security breach allegations to CSIS department"
+					},
+					"response": []
+				},
+				{
+					"name": "Test Legal/Fraud Classification",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"DMN Test - Fraud\",\n    \"description\": \"Testing DMN classification for fraud allegations\",\n    \"complainantName\": \"Finance Team\",\n    \"complainantEmail\": \"finance@company.com\",\n    \"department\": \"Finance\",\n    \"priority\": \"HIGH\",\n    \"allegations\": [\n        {\n            \"allegationType\": \"FRAUD\",\n            \"severity\": \"HIGH\",\n            \"description\": \"Financial irregularities in procurement process\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/cases",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"cases"
+							]
+						},
+						"description": "Test case to verify DMN decision table correctly classifies fraud allegations to Legal department"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "End-to-End Test Scenarios",
+			"item": [
+				{
+					"name": "E2E - Simple HR Case",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// Test that case creation returns 201 and includes workflow instance",
+									"pm.test(\"Case created successfully\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Response contains case number\", function () {",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson.caseNumber).to.match(/^CMS-\\d{4}-\\d{3}$/);",
+									"    pm.collectionVariables.set(\"lastCaseNumber\", responseJson.caseNumber);",
+									"});",
+									"",
+									"pm.test(\"Workflow instance created\", function () {",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson.workflowInstanceKey).to.be.a('number');",
+									"    pm.expect(responseJson.workflowInstanceKey).to.be.greaterThan(0);",
+									"});",
+									"",
+									"pm.test(\"DMN classification applied\", function () {",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson.allegations).to.be.an('array');",
+									"    pm.expect(responseJson.allegations[0].departmentClassification).to.equal('HR');",
+									"    pm.expect(responseJson.allegations[0].assignedGroup).to.include('HR');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"E2E Test - Simple HR Case\",\n    \"description\": \"End-to-end test for simple HR harassment case with workflow validation\",\n    \"complainantName\": \"Test Employee\",\n    \"complainantEmail\": \"test.employee@company.com\",\n    \"department\": \"Operations\",\n    \"priority\": \"HIGH\",\n    \"allegations\": [\n        {\n            \"allegationType\": \"HARASSMENT\",\n            \"severity\": \"HIGH\",\n            \"description\": \"Inappropriate behavior from supervisor\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/cases",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"cases"
+							]
+						},
+						"description": "Complete end-to-end test for creating a simple harassment case and verifying workflow startup"
+					},
+					"response": []
+				},
+				{
+					"name": "E2E - Verify Workflow Started",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Workflow status response\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Process instance exists or completed\", function () {",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson.status).to.be.oneOf(['ACTIVE', 'COMPLETED', 'NOT_FOUND']);",
+									"    ",
+									"    if (responseJson.status === 'ACTIVE') {",
+									"        pm.expect(responseJson.processInstanceId).to.be.a('string');",
+									"        pm.expect(responseJson.variables).to.be.an('object');",
+									"    }",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/v1/cases/{{lastCaseNumber}}/workflow-status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"cases",
+								"{{lastCaseNumber}}",
+								"workflow-status"
+							]
+						},
+						"description": "Verify that the workflow was started for the previously created case"
+					},
+					"response": []
+				},
+				{
+					"name": "E2E - Complex Multi-Department Case",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Multi-department case created\", function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test(\"Multiple allegations processed\", function () {",
+									"    const responseJson = pm.response.json();",
+									"    pm.expect(responseJson.allegations).to.have.length.greaterThan(1);",
+									"});",
+									"",
+									"pm.test(\"DMN routing to multiple departments\", function () {",
+									"    const responseJson = pm.response.json();",
+									"    const departments = responseJson.allegations.map(a => a.departmentClassification);",
+									"    const uniqueDepts = [...new Set(departments)];",
+									"    ",
+									"    // Should have at least HR classification",
+									"    pm.expect(departments).to.include('HR');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"E2E Test - Complex Multi-Department Case\",\n    \"description\": \"End-to-end test for complex case requiring multiple department coordination\",\n    \"complainantName\": \"Senior Manager\",\n    \"complainantEmail\": \"senior.manager@company.com\",\n    \"department\": \"Executive\",\n    \"priority\": \"CRITICAL\",\n    \"allegations\": [\n        {\n            \"allegationType\": \"HARASSMENT\",\n            \"severity\": \"CRITICAL\",\n            \"description\": \"Executive-level harassment requiring AROG review\"\n        },\n        {\n            \"allegationType\": \"DISCRIMINATION\",\n            \"severity\": \"HIGH\",\n            \"description\": \"Systematic discrimination in hiring practices\"\n        },\n        {\n            \"allegationType\": \"FRAUD\",\n            \"severity\": \"HIGH\",\n            \"description\": \"Financial misconduct in budget allocation\"\n        },\n        {\n            \"allegationType\": \"SECURITY_BREACH\",\n            \"severity\": \"MEDIUM\",\n            \"description\": \"Improper handling of confidential information\"\n        }\n    ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/v1/cases",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"v1",
+								"cases"
+							]
+						},
+						"description": "End-to-end test for complex case with multiple allegations requiring coordination across HR, Legal, and CSIS departments"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Set default variables if not already set",
+					"if (!pm.collectionVariables.get(\"baseUrl\")) {",
+					"    pm.collectionVariables.set(\"baseUrl\", \"http://localhost:8080/api\");",
+					"}",
+					"",
+					"if (!pm.collectionVariables.get(\"caseNumber\")) {",
+					"    pm.collectionVariables.set(\"caseNumber\", \"CMS-2025-016\");",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Global test to check response time",
+					"pm.test(\"Response time is less than 10 seconds\", function () {",
+					"    pm.expect(pm.response.responseTime).to.be.below(10000);",
+					"});",
+					"",
+					"// Global test to check for proper JSON response (when applicable)",
+					"if (pm.response.headers.get(\"Content-Type\") && pm.response.headers.get(\"Content-Type\").includes(\"json\")) {",
+					"    pm.test(\"Response is valid JSON\", function () {",
+					"        pm.response.to.be.json;",
+					"    });",
+					"}"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080/api",
+			"type": "string"
+		},
+		{
+			"key": "caseNumber",
+			"value": "CMS-2025-016",
+			"type": "string"
+		},
+		{
+			"key": "lastCaseNumber",
+			"value": "",
+			"type": "string"
+		}
+	]
+}

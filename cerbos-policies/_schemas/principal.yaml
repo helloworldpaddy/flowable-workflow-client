@@ -1,0 +1,18 @@
+variables:
+  # Define roles as a list of strings, corresponding to your DB role names
+  roles:
+    type: LIST
+    ofType: STRING
+    default: []
+  # Other principal attributes from JWT, e.g., userId
+  userId:
+    type: STRING
+  # Example: If your users have specific department assignments beyond roles
+  department_assignments:
+    type: LIST
+    ofType: STRING
+    default: []
+  # Example: To distinguish managers from regular analysts
+  is_manager:
+    type: BOOLEAN
+    default: false

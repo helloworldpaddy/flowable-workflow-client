@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -80,6 +81,50 @@ public class Case {
 
     @OneToMany(mappedBy = "caseId", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private List<Allegation> allegations = new ArrayList<>();
+
+    // Additional case fields from frontend requirements
+    @Column(name = "occurrence_date")
+    private LocalDate occurrenceDate;
+
+    @Column(name = "date_reported_to_citi")
+    private LocalDate dateReportedToCiti;
+
+    @Column(name = "date_received_by_escalation_channel")
+    private LocalDate dateReceivedByEscalationChannel;
+
+    @Column(name = "complaint_escalated_by", length = 50)
+    private String complaintEscalatedBy;
+
+    @Column(name = "data_source_id", length = 50)
+    private String dataSourceId;
+
+    @Column(name = "cluster_country", length = 50)
+    private String clusterCountry;
+
+    @Column(name = "legal_hold")
+    private Boolean legalHold = false;
+
+    @Column(name = "outside_counsel")
+    private Boolean outsideCounsel = false;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "intake_analyst_id", referencedColumnName = "user_id")
+    private User intakeAnalyst;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "investigation_manager_id", referencedColumnName = "user_id")
+    private User investigationManager;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "investigator_id", referencedColumnName = "user_id")
+    private User investigator;
+
+    // One-to-many relationships with new entities
+    @OneToMany(mappedBy = "caseId", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<CaseEntity> entities = new ArrayList<>();
+
+    @OneToMany(mappedBy = "caseId", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<CaseNarrative> narratives = new ArrayList<>();
 
     // Constructors
     public Case() {}
@@ -167,6 +212,57 @@ public class Case {
     public void addAllegation(Allegation allegation) {
         allegations.add(allegation);
         allegation.setCaseId(this.caseId);
+    }
+    
+    // Getters and Setters for new fields
+    public LocalDate getOccurrenceDate() { return occurrenceDate; }
+    public void setOccurrenceDate(LocalDate occurrenceDate) { this.occurrenceDate = occurrenceDate; }
+    
+    public LocalDate getDateReportedToCiti() { return dateReportedToCiti; }
+    public void setDateReportedToCiti(LocalDate dateReportedToCiti) { this.dateReportedToCiti = dateReportedToCiti; }
+    
+    public LocalDate getDateReceivedByEscalationChannel() { return dateReceivedByEscalationChannel; }
+    public void setDateReceivedByEscalationChannel(LocalDate dateReceivedByEscalationChannel) { this.dateReceivedByEscalationChannel = dateReceivedByEscalationChannel; }
+    
+    public String getComplaintEscalatedBy() { return complaintEscalatedBy; }
+    public void setComplaintEscalatedBy(String complaintEscalatedBy) { this.complaintEscalatedBy = complaintEscalatedBy; }
+    
+    public String getDataSourceId() { return dataSourceId; }
+    public void setDataSourceId(String dataSourceId) { this.dataSourceId = dataSourceId; }
+    
+    public String getClusterCountry() { return clusterCountry; }
+    public void setClusterCountry(String clusterCountry) { this.clusterCountry = clusterCountry; }
+    
+    public Boolean getLegalHold() { return legalHold; }
+    public void setLegalHold(Boolean legalHold) { this.legalHold = legalHold; }
+    
+    public Boolean getOutsideCounsel() { return outsideCounsel; }
+    public void setOutsideCounsel(Boolean outsideCounsel) { this.outsideCounsel = outsideCounsel; }
+    
+    public User getIntakeAnalyst() { return intakeAnalyst; }
+    public void setIntakeAnalyst(User intakeAnalyst) { this.intakeAnalyst = intakeAnalyst; }
+    
+    public User getInvestigationManager() { return investigationManager; }
+    public void setInvestigationManager(User investigationManager) { this.investigationManager = investigationManager; }
+    
+    public User getInvestigator() { return investigator; }
+    public void setInvestigator(User investigator) { this.investigator = investigator; }
+    
+    public List<CaseEntity> getEntities() { return entities; }
+    public void setEntities(List<CaseEntity> entities) { this.entities = entities; }
+    
+    public List<CaseNarrative> getNarratives() { return narratives; }
+    public void setNarratives(List<CaseNarrative> narratives) { this.narratives = narratives; }
+    
+    // Helper methods for new entities
+    public void addEntity(CaseEntity entity) {
+        entities.add(entity);
+        entity.setCaseId(this.caseId);
+    }
+    
+    public void addNarrative(CaseNarrative narrative) {
+        narratives.add(narrative);
+        narrative.setCaseId(this.caseId);
     }
 }
 

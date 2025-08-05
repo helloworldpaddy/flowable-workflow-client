@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+             xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/"
+             xmlns:dc="http://www.omg.org/spec/DD/20100524/DC/"
+             xmlns:di="http://www.omg.org/spec/DD/20100524/DI/"
+             xmlns:flowable="http://flowable.org/dmn"
+             id="allegation-classification-dmn"
+             name="Allegation Classification"
+             namespace="http://flowable.org/dmn"
+             exporter="Flowable DMN Designer"
+             exporterVersion="7.0.0">
+
+  <decision id="allegation-classification" name="Allegation Classification">
+    <decisionTable id="DecisionTable_AllegationClassification" hitPolicy="FIRST">
+
+      <!-- Input: Allegation Type -->
+      <input id="InputClause_AllegationType" label="Allegation Type">
+        <inputExpression id="LiteralExpression_AllegationType" typeRef="string">
+          <text>allegationType</text>
+        </inputExpression>
+      </input>
+
+      <!-- Input: Severity Level -->
+      <input id="InputClause_Severity" label="Severity">
+        <inputExpression id="LiteralExpression_Severity" typeRef="string">
+          <text>severity</text>
+        </inputExpression>
+      </input>
+
+      <!-- Output: Classification -->
+      <output id="OutputClause_Classification" label="Classification" name="classification" typeRef="string">
+        <outputValues id="UnaryTests_Classification">
+          <text>"HR","LEGAL","CSIS"</text>
+        </outputValues>
+      </output>
+
+      <!-- Output: Assigned Group -->
+      <output id="OutputClause_AssignedGroup" label="Assigned Group" name="assignedGroup" typeRef="string" />
+
+      <!-- Output: Priority Level -->
+      <output id="OutputClause_Priority" label="Priority" name="priority" typeRef="string">
+        <outputValues id="UnaryTests_Priority">
+          <text>"LOW","MEDIUM","HIGH","CRITICAL"</text>
+        </outputValues>
+      </output>
+
+      <!-- HR Related Cases -->
+      <rule id="DecisionRule_HR_Sexual_Harassment">
+        <inputEntry id="UnaryTests_HR_Sexual_Type">
+          <text>"Sexual Harassment"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_HR_Sexual_Severity">
+          <text>"HIGH", "CRITICAL"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_HR_Sexual_Classification">
+          <text>"HR"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_HR_Sexual_Group">
+          <text>"HR_SPECIALIST"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_HR_Sexual_Priority">
+          <text>severity</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="DecisionRule_HR_Harassment_General">
+        <inputEntry id="UnaryTests_HR_Harassment_Type">
+          <text>"Harassment", "Workplace Harassment", "Discrimination"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_HR_Harassment_Severity">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_HR_Harassment_Classification">
+          <text>"HR"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_HR_Harassment_Group">
+          <text>"HR_SPECIALIST"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_HR_Harassment_Priority">
+          <text>"MEDIUM"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Legal Related Cases -->
+      <rule id="DecisionRule_Legal_Financial_Fraud">
+        <inputEntry id="UnaryTests_Legal_Financial_Type">
+          <text>"Financial Fraud"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Legal_Financial_Severity">
+          <text>"CRITICAL", "HIGH"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_Legal_Financial_Classification">
+          <text>"LEGAL"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Legal_Financial_Group">
+          <text>"LEGAL_COUNSEL"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Legal_Financial_Priority">
+          <text>severity</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="DecisionRule_Legal_Fraud_General">
+        <inputEntry id="UnaryTests_Legal_Fraud_Type">
+          <text>"Fraud", "Embezzlement", "Financial Misconduct"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Legal_Fraud_Severity">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_Legal_Fraud_Classification">
+          <text>"LEGAL"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Legal_Fraud_Group">
+          <text>"LEGAL_COUNSEL"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Legal_Fraud_Priority">
+          <text>"HIGH"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- CSIS Related Cases -->
+      <rule id="DecisionRule_CSIS_Data_Breach">
+        <inputEntry id="UnaryTests_CSIS_Data_Type">
+          <text>"Data Breach"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CSIS_Data_Severity">
+          <text>"CRITICAL", "HIGH"</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_CSIS_Data_Classification">
+          <text>"CSIS"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_CSIS_Data_Group">
+          <text>"SECURITY_ANALYST"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_CSIS_Data_Priority">
+          <text>severity</text>
+        </outputEntry>
+      </rule>
+
+      <rule id="DecisionRule_CSIS_Security_General">
+        <inputEntry id="UnaryTests_CSIS_Security_Type">
+          <text>"Security Breach", "Information Security", "Cyber Security", "Data Loss"</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_CSIS_Security_Severity">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_CSIS_Security_Classification">
+          <text>"CSIS"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_CSIS_Security_Group">
+          <text>"SECURITY_ANALYST"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_CSIS_Security_Priority">
+          <text>"HIGH"</text>
+        </outputEntry>
+      </rule>
+
+      <!-- Default Rule -->
+      <rule id="DecisionRule_Default">
+        <inputEntry id="UnaryTests_Default_Type">
+          <text>-</text>
+        </inputEntry>
+        <inputEntry id="UnaryTests_Default_Severity">
+          <text>-</text>
+        </inputEntry>
+        <outputEntry id="LiteralExpression_Default_Classification">
+          <text>"HR"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Default_Group">
+          <text>"HR_SPECIALIST"</text>
+        </outputEntry>
+        <outputEntry id="LiteralExpression_Default_Priority">
+          <text>"MEDIUM"</text>
+        </outputEntry>
+      </rule>
+
+    </decisionTable>
+  </decision>
+
+</definitions>

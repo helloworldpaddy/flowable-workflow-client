@@ -36,7 +36,11 @@ public class JwtTokenProvider {
                 .issuedAt(new Date())
                 .expiration(expiryDate)
                 .claim("userId", userPrincipal.getUserId())
-                .claim("roles", userPrincipal.getAuthorities())
+                .claim("roles", userPrincipal.getAuthorities().stream()
+                    .map(auth -> auth.getAuthority())
+                    .collect(java.util.stream.Collectors.toList()))
+                .claim("departments", userPrincipal.getDepartments())
+                .claim("isManager", userPrincipal.isManager())
                 .signWith(getSigningKey())
                 .compact();
     }
