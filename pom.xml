@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.2.2</version> <!-- Latest stable Spring Boot 3.x release -->
+        <version>3.3.4</version> <!-- Updated to match wrapper version -->
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
@@ -18,9 +18,9 @@
     <description>Case Management System with Flowable Workflow Engine</description>
 
     <properties>
-        <java.version>17</java.version>
-        <!-- Flowable 7.0.0 is the first stable GA release for the 7.x branch -->
-        <flowable.version>7.0.0</flowable.version>
+        <java.version>21</java.version>
+        <!-- Flowable 7.1.0 for enhanced features and compatibility -->
+        <flowable.version>7.1.0</flowable.version>
         <!-- JJWT (Java JWT) library for token creation and validation -->
         <jjwt.version>0.12.5</jjwt.version>
         <!-- PostgreSQL driver version. Spring Boot parent manages one, but can be specified. -->
@@ -28,6 +28,8 @@
         <!-- Cerbos SDK for authorization -->
         <cerbos.version>0.16.0</cerbos.version>
         <grpc.version>1.62.2</grpc.version>
+        <!-- Hypersistence Utils for JSONB support -->
+        <hypersistence.version>3.9.10</hypersistence.version>
     </properties>
 
     <dependencies>
@@ -74,26 +76,15 @@
         <!-- Flowable Spring Boot Starter:
              This pulls in all necessary Flowable core engines (BPMN, CMMN, DMN, Form, Content, Identity, History)
              and auto-configures them for Spring Boot. -->
-        <!-- Flowable Spring Boot Starters -->
+        <!-- Flowable Spring Boot Starter: Full engine with all components -->
         <dependency>
             <groupId>org.flowable</groupId>
-            <artifactId>flowable-spring-boot-starter-process</artifactId>
+            <artifactId>flowable-spring-boot-starter</artifactId>
             <version>${flowable.version}</version>
         </dependency>
         <dependency>
             <groupId>org.flowable</groupId>
-            <artifactId>flowable-spring-boot-starter-cmmn</artifactId>
-            <version>${flowable.version}</version>
-        </dependency>
-        <!-- DMN dependencies with KIE/Drools support -->
-        <dependency>
-            <groupId>org.flowable</groupId>
-            <artifactId>flowable-spring-boot-starter-dmn</artifactId>
-            <version>${flowable.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.flowable</groupId>
-            <artifactId>flowable-dmn-spring-configurator</artifactId>
+            <artifactId>flowable-engine-common</artifactId>
             <version>${flowable.version}</version>
         </dependency>
         
@@ -198,6 +189,13 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <optional>true</optional>
+        </dependency>
+
+        <!-- Hypersistence Utils for JSONB -->
+        <dependency>
+            <groupId>io.hypersistence</groupId>
+            <artifactId>hypersistence-utils-hibernate-63</artifactId>
+            <version>${hypersistence.version}</version>
         </dependency>
 
         <!-- Testing -->

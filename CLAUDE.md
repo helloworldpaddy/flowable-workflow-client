@@ -30,14 +30,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Architecture Overview
 
-This is a **Spring Boot 3.2.2** application with **Java 17** that integrates **Flowable 7.0.0** workflow engine for case management. The application uses **PostgreSQL** as the database and **JWT authentication** with role-based security.
+This is a **Spring Boot 3.3.4** application with **Java 21** that integrates **Flowable 7.1.0** workflow engine for case management with **advanced queue-based task distribution**. The application uses **PostgreSQL** as the database and **JWT authentication** with role-based security.
 
 ### Core Technology Stack
-- **Spring Boot 3.2.2** with Spring Security
-- **Flowable 7.0.0** - BPMN workflow engine with DMN decision support
+- **Spring Boot 3.3.4** with Spring Security
+- **Flowable 7.1.0** - BPMN workflow engine with DMN decision support
 - **PostgreSQL** - Database with schema `cms_flowable_workflow`
 - **JWT Authentication** - Stateless security with role-based access
 - **Cerbos** - External authorization service (optional)
+- **Queue Management System** - Advanced task distribution with priority-based routing
+- **Hypersistence Utils** - JSONB support for PostgreSQL
 
 ### Key Service Architecture
 
@@ -52,10 +54,27 @@ This is a **Spring Boot 3.2.2** application with **Java 17** that integrates **F
 
 **AuthServiceImpl** - Handles JWT authentication with BCrypt password validation
 
+**QueueTaskService** - Advanced task distribution and queue management
+- `populateQueueTasksForProcessInstance()` - Automatically creates queue tasks when workflows start
+- `claimTask()` - Allows users to claim tasks from queues
+- `getTasksByQueue()` - Retrieves tasks from specific queues with priority ordering
+- `getNextTaskFromQueue()` - Gets highest priority, oldest task from queue
+
+**WorkflowMetadataService** - Dynamic workflow registration and deployment
+- `registerWorkflowMetadata()` - Register workflow with candidate group to queue mappings
+- `deployWorkflow()` - Deploy BPMN processes and build task-to-queue mappings
+- `buildTaskQueueMappings()` - Automatically map BPMN tasks to queues based on candidate groups
+
+**QueueAnalyticsService** - Comprehensive queue monitoring and analytics
+- `getQueueDashboard()` - Overall queue statistics and health metrics
+- `getQueueAnalytics()` - Detailed analytics for specific queues
+- `getPerformanceMetrics()` - Task completion rates and backlog analysis
+
 ### Database Architecture
 
 **Single Datasource** for both business and Flowable tables:
 - **Business Tables**: `cases`, `allegations`, `work_items`, `users`, `roles`, `departments`, `case_types`
+- **Queue Tables**: `queue_tasks`, `workflow_metadata` - Advanced task distribution system
 - **Flowable Tables**: Auto-managed ACT_* tables for workflow engine
 - **Schema**: All tables use `cms_flowable_workflow` schema
 - **Connection Pool**: HikariCP with 20 max connections
@@ -112,6 +131,29 @@ Copy `.env.example` to `.env` and configure:
 - `GET /workflow/tasks` - Get all active tasks
 - `GET /workflow/tasks/user/{userId}` - Get user-specific tasks
 - `POST /workflow/tasks/{taskId}/complete` - Complete workflow task
+
+### Queue-Based Task Management (`/workflow/queue`)
+- `GET /workflow/queue/{queueName}/tasks` - Get tasks from specific queue
+- `GET /workflow/queue/{queueName}/next` - Get next available task from queue
+- `POST /workflow/queue/tasks/{taskId}/claim` - Claim a task for user
+- `POST /workflow/queue/tasks/{taskId}/unclaim` - Release claimed task back to queue
+- `GET /workflow/queue/my-tasks` - Get current user's claimed tasks
+- `GET /workflow/queue/statistics/{queueName}` - Get queue statistics
+- `GET /workflow/queue/names` - Get all available queue names
+
+### Workflow Metadata Management (`/workflow-metadata`)
+- `POST /workflow-metadata/register` - Register workflow metadata with queue mappings
+- `POST /workflow-metadata/deploy` - Deploy BPMN workflow and build task mappings
+- `GET /workflow-metadata/{processDefinitionKey}` - Get workflow metadata
+- `GET /workflow-metadata/active` - Get all active workflows
+- `GET /workflow-metadata/deployed` - Get all deployed workflows
+
+### Queue Analytics (`/queue/analytics`)
+- `GET /queue/analytics/dashboard` - Overall queue analytics dashboard
+- `GET /queue/analytics/{queueName}` - Detailed analytics for specific queue
+- `GET /queue/analytics/workload-distribution` - Workload distribution across queues
+- `GET /queue/analytics/performance` - Performance metrics and completion rates
+- `GET /queue/analytics/health` - Queue health check based on task age and volume
 
 ### Flowable Deployment (`/v1/deploy`)
 - `POST /v1/deploy/all` - Deploy all BPMN, DMN definitions

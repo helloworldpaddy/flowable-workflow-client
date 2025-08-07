@@ -13,8 +13,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import org.flowable.engine.RuntimeService;
-import org.flowable.engine.runtime.ProcessInstance;
 
 import java.util.HashMap;
 import java.util.List;
@@ -27,9 +25,6 @@ public class CaseManagementController {
     
     @Autowired
     private CaseWorkflowService caseWorkflowService;
-    
-    @Autowired
-    private RuntimeService runtimeService;
     
     @GetMapping("/test")
     public ResponseEntity<String> test() {
@@ -218,42 +213,26 @@ public class CaseManagementController {
         try {
             Map<String, Object> workflowStatus = new HashMap<>();
             
-            // Find the process instance for this case
-            List<ProcessInstance> processInstances = runtimeService.createProcessInstanceQuery()
-                .variableValueEquals("caseNumber", caseNumber)
-                .active()
-                .list();
+            // Get the case details to determine workflow status
+            CaseWithAllegationsResponse caseDetails = caseWorkflowService.getCaseDetailsByCaseNumber(caseNumber);
             
-            if (processInstances.isEmpty()) {
-                // Check if process is completed
-                long historicCount = runtimeService.createProcessInstanceQuery()
-                    .variableValueEquals("caseNumber", caseNumber)
-                    .count();
-                
-                if (historicCount > 0) {
-                    workflowStatus.put("status", "COMPLETED");
-                    workflowStatus.put("message", "Workflow has been completed");
-                } else {
-                    workflowStatus.put("status", "NOT_FOUND");
-                    workflowStatus.put("message", "No workflow found for this case");
-                }
+            if (caseDetails == null) {
+                workflowStatus.put("status", "NOT_FOUND");
+                workflowStatus.put("message", "No case found with number: " + caseNumber);
             } else {
-                ProcessInstance processInstance = processInstances.get(0);
+                String currentStatus = caseDetails.getStatus().toString();
                 workflowStatus.put("status", "ACTIVE");
-                workflowStatus.put("processInstanceId", processInstance.getId());
-                workflowStatus.put("processDefinitionId", processInstance.getProcessDefinitionId());
-                workflowStatus.put("startTime", processInstance.getStartTime());
-                
-                // Get current activity
-                Map<String, Object> variables = runtimeService.getVariables(processInstance.getId());
-                workflowStatus.put("variables", variables);
+                workflowStatus.put("caseNumber", caseNumber);
+                workflowStatus.put("currentStatus", currentStatus);
+                workflowStatus.put("message", "Case is currently in " + currentStatus + " status");
+                workflowStatus.put("lastUpdated", caseDetails.getUpdatedAt());
             }
             
             return ResponseEntity.ok(workflowStatus);
         } catch (Exception e) {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("error", "Failed to retrieve workflow status: " + e.getMessage());
-            return ResponseEntity.internalServerError().body(errorResponse);
+            return ResponseEntity.internalServerError().build();
         }
     }
     
@@ -282,6 +261,64 @@ public class CaseManagementController {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("error", "Failed to retrieve workflow journey: " + e.getMessage());
             return ResponseEntity.internalServerError().body(errorResponse);
+        }
+    }
+    
+    @PostMapping("/{caseNumber}/submit")
+    @Operation(summary = "Submit case for workflow processing", description = "Submit a case to transition it to the next workflow step. Only Intake Analysts and Admins can submit cases.")
+    @PreAuthorize("hasAnyRole('INTAKE_ANALYST', 'ADMIN', 'INTAKE_ANALYST_GROUP')")
+    public ResponseEntity<Map<String, Object>> submitCase(
+            @Parameter(description = "Case number to submit") @PathVariable String caseNumber,
+            Authentication authentication) {
+        try {
+            System.out.println("🎯 Received case submission request for case: " + caseNumber + " by user: " + authentication.getName());
+            
+            // Get the case details first
+            CaseWithAllegationsResponse caseDetails = caseWorkflowService.getCaseDetailsByCaseNumber(caseNumber);
+            
+            if (caseDetails == null) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("error", "Case not found");
+                errorResponse.put("caseNumber", caseNumber);
+                return ResponseEntity.notFound().build();
+            }
+            
+            // Check if case is in a valid state for submission
+            String currentStatus = caseDetails.getStatus().toString();
+            List<String> allowedStatuses = List.of("OPEN", "SUBMITTED", "IN_PROGRESS");
+            
+            if (!allowedStatuses.contains(currentStatus)) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("error", "Case cannot be submitted from current status: " + currentStatus);
+                errorResponse.put("allowedStatuses", allowedStatuses);
+                errorResponse.put("currentStatus", currentStatus);
+                return ResponseEntity.badRequest().build();
+            }
+            
+            // Submit the case (this will trigger the workflow transition)
+            CaseWithAllegationsResponse updatedCase = caseWorkflowService.submitCase(caseNumber, authentication.getName());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("message", "Case submitted successfully");
+            response.put("caseNumber", caseNumber);
+            response.put("previousStatus", currentStatus);
+            response.put("newStatus", updatedCase.getStatus().toString());
+            response.put("submittedBy", authentication.getName());
+            response.put("submittedAt", java.time.Instant.now().toString());
+            
+            System.out.println("✅ Case " + caseNumber + " submitted successfully. Status changed from " + currentStatus + " to " + updatedCase.getStatus());
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error submitting case " + caseNumber + ": " + e.getMessage());
+            e.printStackTrace();
+            
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to submit case: " + e.getMessage());
+            errorResponse.put("caseNumber", caseNumber);
+            
+            return ResponseEntity.internalServerError().build();
         }
     }
 }

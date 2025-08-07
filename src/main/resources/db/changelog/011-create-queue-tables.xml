@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+    <changeSet id="011-1" author="system" context="workflow-queue-tables">
+        <comment>Create workflow metadata table for dynamic workflow registration</comment>
+        
+        <createTable tableName="workflow_metadata">
+            <column name="id" type="SERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="process_definition_key" type="VARCHAR(255)">
+                <constraints nullable="false" unique="true"/>
+            </column>
+            <column name="process_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="description" type="TEXT"/>
+            <column name="version" type="INTEGER" defaultValue="1">
+                <constraints nullable="false"/>
+            </column>
+            <column name="candidate_group_mappings" type="JSONB">
+                <constraints nullable="false"/>
+            </column>
+            <column name="task_queue_mappings" type="JSONB"/>
+            <column name="metadata" type="JSONB"/>
+            <column name="active" type="BOOLEAN" defaultValue="true">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deployed" type="BOOLEAN" defaultValue="false">
+                <constraints nullable="false"/>
+            </column>
+            <column name="deployment_id" type="VARCHAR(255)"/>
+            <column name="created_by" type="VARCHAR(255)" defaultValue="system">
+                <constraints nullable="false"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="updated_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        
+        <!-- Indexes for workflow_metadata -->
+        <createIndex tableName="workflow_metadata" indexName="idx_workflow_metadata_process_key">
+            <column name="process_definition_key"/>
+        </createIndex>
+        
+        <createIndex tableName="workflow_metadata" indexName="idx_workflow_metadata_active">
+            <column name="active"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="011-2" author="system" context="workflow-queue-tables">
+        <comment>Create queue tasks table for task distribution system</comment>
+        
+        <createTable tableName="queue_tasks">
+            <column name="task_id" type="VARCHAR(255)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="process_instance_id" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="process_definition_key" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="task_definition_key" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="task_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="queue_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="assignee" type="VARCHAR(255)"/>
+            <column name="status" type="VARCHAR(50)" defaultValue="OPEN">
+                <constraints nullable="false"/>
+            </column>
+            <column name="priority" type="INTEGER" defaultValue="50"/>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+            <column name="claimed_at" type="TIMESTAMP"/>
+            <column name="completed_at" type="TIMESTAMP"/>
+            <column name="task_data" type="JSONB"/>
+        </createTable>
+        
+        <!-- Indexes for queue_tasks -->
+        <createIndex tableName="queue_tasks" indexName="idx_queue_tasks_queue_name">
+            <column name="queue_name"/>
+        </createIndex>
+        
+        <createIndex tableName="queue_tasks" indexName="idx_queue_tasks_status">
+            <column name="status"/>
+        </createIndex>
+        
+        <createIndex tableName="queue_tasks" indexName="idx_queue_tasks_assignee">
+            <column name="assignee"/>
+        </createIndex>
+        
+        <createIndex tableName="queue_tasks" indexName="idx_queue_tasks_process_instance">
+            <column name="process_instance_id"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="011-3" author="system" context="workflow-queue-tables">
+        <comment>Insert initial workflow metadata for CMS workflow</comment>
+        
+        <sql>
+            INSERT INTO workflow_metadata (
+                process_definition_key,
+                process_name,
+                description,
+                version,
+                candidate_group_mappings,
+                active,
+                deployed,
+                created_by
+            ) VALUES (
+                'Process_CMS_Workflow_Updated',
+                'CMS Case Management Workflow',
+                'Main workflow for case management with queue-based task distribution',
+                1,
+                '{
+                    "hr": "hr-queue",
+                    "legal": "legal-queue", 
+                    "csis": "csis-queue",
+                    "security": "security-queue",
+                    "management": "management-queue",
+                    "default": "default-queue"
+                }'::jsonb,
+                true,
+                false,
+                'system'
+            ) ON CONFLICT (process_definition_key) DO NOTHING;
+        </sql>
+    </changeSet>
+
+</databaseChangeLog>

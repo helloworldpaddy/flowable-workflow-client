@@ -1,6 +1,8 @@
 package com.workflow.cmsflowable.controller;
 
+import com.workflow.cmsflowable.dto.response.QueueTaskResponse;
 import com.workflow.cmsflowable.dto.response.WorkflowTaskResponse;
+import com.workflow.cmsflowable.service.QueueTaskService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -28,6 +30,9 @@ public class WorkflowController {
 
     @Autowired
     private TaskService taskService;
+
+    @Autowired
+    private QueueTaskService queueTaskService;
 
     @PostMapping("/start/{processKey}")
     public ResponseEntity<Map<String, Object>> startProcess(
@@ -233,6 +238,134 @@ public class WorkflowController {
     public ResponseEntity<List<ProcessInstance>> getActiveProcesses() {
         List<ProcessInstance> processInstances = runtimeService.createProcessInstanceQuery().list();
         return ResponseEntity.ok(processInstances);
+    }
+
+    // ========== QUEUE-BASED TASK MANAGEMENT ==========
+
+    @GetMapping("/queue/{queueName}/tasks")
+    @Operation(summary = "Get tasks from queue", description = "Get tasks from a specific queue, optionally filtering for unassigned tasks only")
+    public ResponseEntity<List<QueueTaskResponse>> getQueueTasks(
+            @Parameter(description = "Queue name") @PathVariable String queueName,
+            @Parameter(description = "Show unassigned tasks only") @RequestParam(defaultValue = "false") boolean unassignedOnly) {
+        try {
+            List<QueueTaskResponse> tasks = queueTaskService.getTasksByQueue(queueName, unassignedOnly);
+            return ResponseEntity.ok(tasks);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/queue/{queueName}/next")
+    @Operation(summary = "Get next task from queue", description = "Get the next available (highest priority, oldest) task from a queue")
+    public ResponseEntity<QueueTaskResponse> getNextTaskFromQueue(
+            @Parameter(description = "Queue name") @PathVariable String queueName) {
+        try {
+            QueueTaskResponse task = queueTaskService.getNextTaskFromQueue(queueName);
+            if (task != null) {
+                return ResponseEntity.ok(task);
+            } else {
+                return ResponseEntity.noContent().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PostMapping("/queue/tasks/{taskId}/claim")
+    @Operation(summary = "Claim a queue task", description = "Claim a task from the queue for a specific user")
+    public ResponseEntity<QueueTaskResponse> claimQueueTask(
+            @Parameter(description = "Task ID") @PathVariable String taskId,
+            @Parameter(description = "User ID") @RequestParam String userId) {
+        try {
+            QueueTaskResponse task = queueTaskService.claimTask(taskId, userId);
+            return ResponseEntity.ok(task);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/queue/tasks/{taskId}/unclaim")
+    @Operation(summary = "Unclaim a queue task", description = "Release a claimed task back to the queue")
+    public ResponseEntity<QueueTaskResponse> unclaimQueueTask(
+            @Parameter(description = "Task ID") @PathVariable String taskId) {
+        try {
+            QueueTaskResponse task = queueTaskService.unclaimTask(taskId);
+            return ResponseEntity.ok(task);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/queue/my-tasks")
+    @Operation(summary = "Get my claimed tasks", description = "Get tasks claimed by the current user")
+    public ResponseEntity<List<QueueTaskResponse>> getMyQueueTasks(Authentication authentication) {
+        try {
+            if (authentication == null) {
+                return ResponseEntity.status(401).build();
+            }
+
+            String username = authentication.getName();
+            List<QueueTaskResponse> tasks = queueTaskService.getTasksByAssignee(username);
+            return ResponseEntity.ok(tasks);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/queue/tasks/{taskId}")
+    @Operation(summary = "Get queue task details", description = "Get detailed information about a queue task")
+    public ResponseEntity<QueueTaskResponse> getQueueTaskDetails(
+            @Parameter(description = "Task ID") @PathVariable String taskId) {
+        try {
+            QueueTaskResponse task = queueTaskService.getQueueTask(taskId);
+            return ResponseEntity.ok(task);
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    @GetMapping("/queue/statistics/{queueName}")
+    @Operation(summary = "Get queue statistics", description = "Get statistics for a specific queue")
+    public ResponseEntity<Map<String, Object>> getQueueStatistics(
+            @Parameter(description = "Queue name") @PathVariable String queueName) {
+        try {
+            Map<String, Object> stats = queueTaskService.getQueueStatistics(queueName);
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/queue/names")
+    @Operation(summary = "Get all queue names", description = "Get list of all available queue names")
+    public ResponseEntity<List<String>> getAllQueueNames() {
+        try {
+            List<String> queueNames = queueTaskService.getAllQueueNames();
+            return ResponseEntity.ok(queueNames);
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/queue/cases/{caseId}/tasks")
+    @Operation(summary = "Get queue tasks for case", description = "Get all queue tasks associated with a specific case")
+    public ResponseEntity<List<QueueTaskResponse>> getQueueTasksForCase(
+            @Parameter(description = "Case ID") @PathVariable String caseId) {
+        try {
+            // Find process instance by business key (case ID)
+            ProcessInstance processInstance = runtimeService.createProcessInstanceQuery()
+                    .processInstanceBusinessKey(caseId)
+                    .singleResult();
+            
+            if (processInstance != null) {
+                List<QueueTaskResponse> tasks = queueTaskService.getTasksByProcessInstance(processInstance.getId());
+                return ResponseEntity.ok(tasks);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
     }
 
     /**

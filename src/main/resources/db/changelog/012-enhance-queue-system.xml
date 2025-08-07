@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.9.xsd">
+
+    <changeSet id="012-1" author="system" context="enhanced-queue-system">
+        <comment>Update workflow metadata with enhanced multi-department queue mappings</comment>
+        
+        <sql>
+            UPDATE workflow_metadata 
+            SET candidate_group_mappings = '{
+                "hr": "hr-intake-queue",
+                "hr_group": "hr-intake-queue",
+                "hr_specialist": "hr-processing-queue",
+                "hr_manager": "hr-approval-queue",
+                
+                "legal": "legal-intake-queue", 
+                "legal_group": "legal-intake-queue",
+                "legal_counsel": "legal-review-queue",
+                "legal_director": "legal-approval-queue",
+                
+                "csis": "csis-intake-queue",
+                "security": "csis-intake-queue",
+                "csis_group": "csis-intake-queue",
+                "security_analyst": "csis-investigation-queue",
+                "csis_director": "csis-approval-queue",
+                
+                "investigator": "investigation-queue",
+                "investigator_group": "investigation-queue",
+                "investigation_manager": "investigation-approval-queue",
+                
+                "director": "director-oversight-queue",
+                "director_group": "director-oversight-queue",
+                "ethics_director": "director-oversight-queue",
+                
+                "default": "default-queue"
+            }'::jsonb
+            WHERE process_definition_key = 'Process_CMS_Workflow_Updated';
+        </sql>
+    </changeSet>
+
+    <changeSet id="012-2" author="system" context="enhanced-queue-system">
+        <comment>Add escalation support to queue_tasks table</comment>
+        
+        <addColumn tableName="queue_tasks">
+            <column name="escalated_from" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="escalated_at" type="TIMESTAMP">
+                <constraints nullable="true"/>
+            </column>
+            <column name="escalation_reason" type="TEXT">
+                <constraints nullable="true"/>
+            </column>
+            <column name="escalated_by" type="VARCHAR(255)">
+                <constraints nullable="true"/>
+            </column>
+        </addColumn>
+        
+        <createIndex tableName="queue_tasks" indexName="idx_queue_tasks_escalated_from">
+            <column name="escalated_from"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="012-3" author="system" context="enhanced-queue-system">
+        <comment>Create queue performance tracking table</comment>
+        
+        <createTable tableName="queue_performance_metrics">
+            <column name="id" type="SERIAL">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="queue_name" type="VARCHAR(255)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="metric_date" type="DATE" defaultValueDate="CURRENT_DATE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tasks_created" type="INTEGER" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tasks_completed" type="INTEGER" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="tasks_escalated" type="INTEGER" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="avg_completion_time_hours" type="DECIMAL(10,2)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="max_wait_time_hours" type="DECIMAL(10,2)">
+                <constraints nullable="true"/>
+            </column>
+            <column name="created_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        
+        <createIndex tableName="queue_performance_metrics" indexName="idx_queue_performance_queue_date">
+            <column name="queue_name"/>
+            <column name="metric_date"/>
+        </createIndex>
+    </changeSet>
+
+    <changeSet id="012-4" author="system" context="enhanced-queue-system">
+        <comment>Add priority escalation rules</comment>
+        
+        <addColumn tableName="queue_tasks">
+            <column name="auto_escalate_after_hours" type="INTEGER" defaultValue="24">
+                <constraints nullable="true"/>
+            </column>
+            <column name="last_activity_at" type="TIMESTAMP" defaultValueComputed="CURRENT_TIMESTAMP">
+                <constraints nullable="false"/>
+            </column>
+        </addColumn>
+        
+        <createIndex tableName="queue_tasks" indexName="idx_queue_tasks_auto_escalation">
+            <column name="queue_name"/>
+            <column name="status"/>
+            <column name="last_activity_at"/>
+            <column name="auto_escalate_after_hours"/>
+        </createIndex>
+    </changeSet>
+
+</databaseChangeLog>

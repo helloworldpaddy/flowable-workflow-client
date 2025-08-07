@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Entity
@@ -74,6 +75,34 @@ public class CaseEntity {
 
     @Column(name = "organization_type", length = 100)
     private String organizationType;
+    
+    // New fields from UI design
+    @Column(name = "preferred_contact_method", columnDefinition = "TEXT")
+    private String preferredContactMethod;
+    
+    @Column(name = "goc", length = 100)
+    private String goc;
+    
+    @Column(name = "manager", length = 255)
+    private String manager;
+    
+    @Column(name = "hire_date")
+    private LocalDate hireDate;
+    
+    @Column(name = "hr_responsible", length = 255)
+    private String hrResponsible;
+    
+    @Column(name = "legal_vehicle", length = 100)
+    private String legalVehicle;
+    
+    @Column(name = "managed_segment", length = 100)
+    private String managedSegment;
+    
+    @Column(name = "relationship_to_citi", length = 100)
+    private String relationshipToCiti;
+    
+    @Column(name = "anonymous")
+    private Boolean anonymous = false;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;

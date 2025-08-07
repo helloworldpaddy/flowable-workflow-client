@@ -11,6 +11,11 @@ public enum CaseStatus {
     OPEN("Open", "Case has been created and is awaiting assignment", "primary"),
     
     /**
+     * Case has been submitted for processing and is awaiting workflow assignment
+     */
+    SUBMITTED("Submitted", "Case has been submitted and is ready for processing", "info"),
+    
+    /**
      * Case is currently being worked on
      */
     IN_PROGRESS("In Progress", "Case is currently being investigated or processed", "warning"),
@@ -143,7 +148,7 @@ public enum CaseStatus {
      * @return true if the case is actively being worked on
      */
     public boolean isInProgress() {
-        return this == IN_PROGRESS || this == UNDER_REVIEW || this == EXTERNAL_INVESTIGATION || this == NEAR_COMPLETION;
+        return this == IN_PROGRESS || this == SUBMITTED || this == UNDER_REVIEW || this == EXTERNAL_INVESTIGATION || this == NEAR_COMPLETION;
     }
 
     /**
@@ -182,6 +187,7 @@ public enum CaseStatus {
             case NEAR_COMPLETION:
                 return 3; // Medium priority
             case OPEN:
+            case SUBMITTED:
             case PENDING_INFO:
                 return 2; // Low-medium priority
             case ON_HOLD:
@@ -203,7 +209,10 @@ public enum CaseStatus {
     public CaseStatus[] getValidTransitions() {
         switch (this) {
             case OPEN:
-                return new CaseStatus[]{IN_PROGRESS, PENDING_INFO, PENDING_APPROVAL, ON_HOLD, CANCELLED, REJECTED};
+                return new CaseStatus[]{SUBMITTED, IN_PROGRESS, PENDING_INFO, PENDING_APPROVAL, ON_HOLD, CANCELLED, REJECTED};
+            
+            case SUBMITTED:
+                return new CaseStatus[]{IN_PROGRESS, UNDER_REVIEW, PENDING_INFO, ON_HOLD, CANCELLED};
             
             case IN_PROGRESS:
                 return new CaseStatus[]{RESOLVED, UNDER_REVIEW, ESCALATED, PENDING_INFO, ON_HOLD, EXTERNAL_INVESTIGATION, NEAR_COMPLETION};
@@ -303,7 +312,7 @@ public enum CaseStatus {
      */
     public static CaseStatus[] getActiveStatuses() {
         return new CaseStatus[]{
-            OPEN, IN_PROGRESS, UNDER_REVIEW, ESCALATED, PENDING_INFO, 
+            OPEN, SUBMITTED, IN_PROGRESS, UNDER_REVIEW, ESCALATED, PENDING_INFO, 
             PENDING_APPROVAL, ON_HOLD, EXTERNAL_INVESTIGATION, 
             NEAR_COMPLETION, REQUIRES_ATTENTION, RESOLVED
         };
@@ -338,6 +347,8 @@ public enum CaseStatus {
         switch (this) {
             case OPEN:
                 return "#007bff"; // Blue
+            case SUBMITTED:
+                return "#17a2b8"; // Teal
             case IN_PROGRESS:
             case NEAR_COMPLETION:
                 return "#ffc107"; // Yellow/Amber
@@ -372,6 +383,8 @@ public enum CaseStatus {
         switch (this) {
             case OPEN:
                 return "fa-folder-open";
+            case SUBMITTED:
+                return "fa-paper-plane";
             case IN_PROGRESS:
                 return "fa-spinner";
             case RESOLVED:

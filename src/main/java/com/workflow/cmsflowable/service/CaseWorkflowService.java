@@ -43,6 +43,9 @@ public class CaseWorkflowService {
     @Autowired
     private DetermineDepartmentRoutingService dmnService;
     
+    @Autowired
+    private QueueTaskService queueTaskService;
+    
     private static final String CASE_WORKFLOW_PROCESS_KEY = "Process_CMS_Workflow_Updated";
     
     // @PreAuthorize("hasPermission(#request, 'case', 'intake_initial_review')")
@@ -243,6 +246,15 @@ public class CaseWorkflowService {
             
             System.out.println("Updated case, work items, and allegations with process instance ID");
             
+            // Populate queue tasks for the new process instance
+            try {
+                queueTaskService.populateQueueTasksForProcessInstance(processInstance.getId(), CASE_WORKFLOW_PROCESS_KEY);
+                System.out.println("Successfully populated queue tasks for process instance: " + processInstance.getId());
+            } catch (Exception e) {
+                System.err.println("Warning: Failed to populate queue tasks: " + e.getMessage());
+                // Don't fail the entire process for queue population issues
+            }
+            
             // Get active tasks
             List<Task> activeTasks = taskService.createTaskQuery()
                 .processInstanceId(processInstance.getId())
@@ -291,6 +303,15 @@ public class CaseWorkflowService {
         
         // Complete the task
         taskService.complete(request.getTaskId(), variables);
+        
+        // Update queue task status
+        try {
+            queueTaskService.completeTask(request.getTaskId());
+            System.out.println("Successfully marked queue task as completed: " + request.getTaskId());
+        } catch (Exception e) {
+            System.err.println("Warning: Failed to update queue task completion: " + e.getMessage());
+            // Don't fail the entire operation for queue update issues
+        }
         
         // Return task information
         return convertToWorkflowTaskResponse(task);
@@ -381,10 +402,124 @@ public class CaseWorkflowService {
             .collect(Collectors.toList());
     }
     
+    /**
+     * Submit a case for workflow processing - transitions case status and advances workflow
+     */
+    public CaseWithAllegationsResponse submitCase(String caseNumber, String submittedBy) {
+        System.out.println("🎯 Starting case submission for case: " + caseNumber + " by user: " + submittedBy);
+        
+        // Get the case entity
+        Case caseEntity = caseRepository.findByCaseNumber(caseNumber)
+            .orElseThrow(() -> new RuntimeException("Case not found: " + caseNumber));
+        
+        // Check current status
+        CaseStatus currentStatus = caseEntity.getStatus();
+        System.out.println("Current case status: " + currentStatus);
+        
+        // Validate status transition
+        List<CaseStatus> allowedStatuses = Arrays.asList(CaseStatus.OPEN, CaseStatus.SUBMITTED, CaseStatus.IN_PROGRESS);
+        if (!allowedStatuses.contains(currentStatus)) {
+            throw new RuntimeException("Case cannot be submitted from status: " + currentStatus + ". Allowed statuses: " + allowedStatuses);
+        }
+        
+        try {
+            // Update case status to SUBMITTED
+            caseEntity.setStatus(CaseStatus.SUBMITTED);
+            caseEntity.setUpdatedAt(java.time.LocalDateTime.now());
+            // Note: We'd typically set the updatedBy field here if the entity has that field
+            
+            Case updatedCase = caseRepository.save(caseEntity);
+            System.out.println("✅ Updated case status to SUBMITTED");
+            
+            // Find the workflow instance for this case
+            List<ProcessInstance> processInstances = runtimeService.createProcessInstanceQuery()
+                .processInstanceBusinessKey(caseNumber)
+                .active()
+                .list();
+            
+            if (!processInstances.isEmpty()) {
+                ProcessInstance processInstance = processInstances.get(0);
+                System.out.println("Found active process instance: " + processInstance.getId());
+                
+                // Get the current active tasks for the workflow
+                List<Task> activeTasks = taskService.createTaskQuery()
+                    .processInstanceId(processInstance.getId())
+                    .list();
+                
+                System.out.println("Found " + activeTasks.size() + " active tasks");
+                
+                // Check for EO Intake task and complete it to advance the workflow
+                for (Task task : activeTasks) {
+                    System.out.println("Processing task: " + task.getName() + " (ID: " + task.getId() + ")");
+                    
+                    if ("EO Intake - Initial Review".equals(task.getName()) || task.getName().contains("Intake")) {
+                        // Prepare variables for task completion
+                        Map<String, Object> variables = new HashMap<>();
+                        variables.put("submittedBy", submittedBy);
+                        variables.put("submissionDate", java.time.Instant.now().toString());
+                        variables.put("caseSubmitted", true);
+                        variables.put("intakeCompleted", true);
+                        
+                        // Complete the intake task to advance workflow
+                        taskService.complete(task.getId(), variables);
+                        System.out.println("✅ Completed intake task: " + task.getName());
+                        
+                        // Update queue task status if exists
+                        try {
+                            queueTaskService.completeTask(task.getId());
+                            System.out.println("✅ Updated queue task status");
+                        } catch (Exception e) {
+                            System.err.println("⚠️ Warning: Failed to update queue task: " + e.getMessage());
+                        }
+                        
+                        break;
+                    }
+                }
+                
+                // Log new active tasks after submission
+                List<Task> newActiveTasks = taskService.createTaskQuery()
+                    .processInstanceId(processInstance.getId())
+                    .list();
+                
+                System.out.println("After submission, found " + newActiveTasks.size() + " active tasks:");
+                for (Task task : newActiveTasks) {
+                    System.out.println("   - " + task.getName() + " (ID: " + task.getId() + ")");
+                }
+                
+            } else {
+                System.err.println("⚠️ Warning: No active workflow process found for case: " + caseNumber);
+                // The case status is still updated even if no workflow is found
+            }
+            
+            // Return the updated case with allegations
+            List<Allegation> allegations = allegationRepository.findByCaseId(caseNumber);
+            CaseWithAllegationsResponse response = convertToCaseWithAllegationsResponse(updatedCase, allegations);
+            
+            System.out.println("✅ Case submission completed successfully for: " + caseNumber);
+            return response;
+            
+        } catch (Exception e) {
+            System.err.println("❌ Error during case submission: " + e.getMessage());
+            e.printStackTrace();
+            
+            // Revert case status if workflow operations failed
+            try {
+                caseEntity.setStatus(currentStatus);
+                caseRepository.save(caseEntity);
+                System.out.println("✅ Reverted case status to: " + currentStatus);
+            } catch (Exception revertError) {
+                System.err.println("❌ Failed to revert case status: " + revertError.getMessage());
+            }
+            
+            throw new RuntimeException("Failed to submit case: " + e.getMessage(), e);
+        }
+    }
+    
     private String generateCaseNumber() {
-        String prefix = "CMS-" + java.time.Year.now() + "-";
+        String prefix = "OC" + java.time.Year.now() + "-";
+        // Generate 6-digit sequential number
         Long count = caseRepository.count() + 1;
-        return prefix + String.format("%03d", count);
+        return prefix + String.format("%06d", count);
     }
     
     private CaseWithAllegationsResponse convertToCaseWithAllegationsResponse(Case caseEntity, List<Allegation> allegations) {

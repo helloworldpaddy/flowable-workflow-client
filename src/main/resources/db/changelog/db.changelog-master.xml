@@ -28,4 +28,19 @@
     <include file="db/changelog/009-create-case-narratives.xml"/>
     <include file="db/changelog/010-enhance-departments.xml"/>
     
+    <!-- Queue Management System Integration -->
+    <include file="db/changelog/011-create-queue-tables.xml"/>
+    
+    <!-- Enhanced Multi-Department Queue System -->
+    <include file="db/changelog/012-enhance-queue-system.xml"/>
+    
+    <!-- Update Test User Passwords -->
+    <include file="db/changelog/014-update-test-user-passwords.xml"/>
+    
+    <!-- Case Creation PRD Enhancements -->
+    <include file="db/changelog/015-enhance-case-entities.xml"/>
+    <include file="db/changelog/016-create-case-comments.xml"/>
+    <include file="db/changelog/017-create-case-attachments.xml"/>
+    <include file="db/changelog/018-create-case-audit-trail.xml"/>
+    
 </databaseChangeLog>

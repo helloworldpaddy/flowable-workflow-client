@@ -41,11 +41,11 @@ info:
   termsOfService: https://company.com/terms
   contact:
     name: CMS Development Team
-    email: cms-dev@company.com
-    url: https://company.com/cms
+    email: arun.vaidhyanathan@citi.com
+    url:
   license:
-    name: MIT
-    url: https://opensource.org/licenses/MIT
+    name:
+    url:
 
 servers:
   - url: http://localhost:8080/api
