@@ -107,7 +107,7 @@ public class CaseManagementController {
     
     @GetMapping
     @Operation(summary = "Get all cases", description = "Retrieve a list of all cases in the system")
-    @PreAuthorize("hasAnyRole('DIRECTOR_GROUP', 'MANAGER_GROUP', 'ANALYST_GROUP')")
+    @PreAuthorize("hasAnyAuthority('DIRECTOR', 'IU_MANAGER', 'INTAKE_ANALYST', 'HR_SPECIALIST', 'LEGAL_COUNSEL', 'SECURITY_ANALYST', 'ADMIN')")
     public ResponseEntity<List<CaseWithAllegationsResponse>> getAllCases(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
@@ -266,7 +266,7 @@ public class CaseManagementController {
     
     @PostMapping("/{caseNumber}/submit")
     @Operation(summary = "Submit case for workflow processing", description = "Submit a case to transition it to the next workflow step. Only Intake Analysts and Admins can submit cases.")
-    @PreAuthorize("hasAnyRole('INTAKE_ANALYST', 'ADMIN', 'INTAKE_ANALYST_GROUP')")
+    @PreAuthorize("hasAnyAuthority('INTAKE_ANALYST', 'ADMIN')")
     public ResponseEntity<Map<String, Object>> submitCase(
             @Parameter(description = "Case number to submit") @PathVariable String caseNumber,
             Authentication authentication) {
